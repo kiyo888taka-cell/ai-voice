@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>AIライブ同時通訳 Pro</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 15px; background: #121212; color: #ffffff; }
+  .card { background: #1e1e1e; padding: 18px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); max-width: 600px; margin: 0 auto; }
+  h2 { margin-top: 0; font-size: 20px; text-align: center; color: #4da3ff; }
+  label { font-size: 12px; color: #aaa; display: block; margin-top: 10px; }
+  input, select, textarea, button { width: 100%; padding: 12px; margin: 6px 0; border-radius: 10px; border: 1px solid #333; background: #2c2c2c; color: #fff; font-size: 16px; box-sizing: border-box; }
+  textarea { height: 70px; font-size: 14px; resize: vertical; }
+  button { background: #0a84ff; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 12px; transition: 0.2s; }
+  button.stop { background: #ff453a; }
+  button.sub { background: #3a3a3c; font-size: 13px; padding: 8px; margin-top: 6px; }
+  .status { font-size: 13px; color: #30d158; text-align: center; margin: 10px 0; font-weight: bold; }
+  .chat-log { background: #161616; padding: 12px; border-radius: 10px; height: 220px; overflow-y: auto; border: 1px solid #2c2c2c; margin-top: 10px; }
+  .msg { margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2a2a2a; }
+  .orig { font-size: 13px; color: #aaa; }
+  .trans { font-size: 16px; color: #fff; font-weight: bold; margin-top: 4px; }
+  .meta { font-size: 11px; color: #4da3ff; margin-top: 2px; }
+  .warn { font-size: 12px; color: #ffd60a; background: rgba(255, 214, 10, 0.1); padding: 8px; border-radius: 8px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>🎙️ AIライブ同時通訳 Pro</h2>
+  <div class="warn">⚠️ 自分の翻訳音声をマイクが拾うのを防ぐため、<strong>イヤホン着用</strong>を強く推奨します。</div>
+
+  <label>Gemini APIキー（自動保存されます）</label>
+  <input type="password" id="apiKey" placeholder="AIzaSy... を貼り付け" onchange="saveSettings()">
+
+  <label>通訳の方向</label>
+  <select id="direction" onchange="saveSettings()">
+    <option value="ja-to-en">🇯🇵 日本語 ➔ 🇺🇸 英語（スラング・ニュアンス反映）</option>
+    <option value="en-to-ja">🇺🇸 英語 ➔ 🇯🇵 日本語（スラング・ニュアンス反映）</option>
+  </select>
+
+  <label>前提知識・専門用語・スラング・キャラ設定</label>
+  <textarea id="contextPrompt" placeholder="例：IT開発の現場。カジュアルな友達同士の会話。現地の最新スラングや略語も自然な口語として訳して。" onchange="saveSettings()">カジュアルな日常会話・SNS・ゲーム・ビジネス現場の最新スラングや略語（例: ngl, fr, bet, 草, ヤバい等）のニュアンスを正確に汲み取り、話し手のテンションに合わせた自然な口語で訳してください。</textarea>
+
+  <button id="toggleBtn" onclick="toggleApp()">通訳スタート（マイクON）</button>
+  <button class="sub" onclick="clearHistory()">会話の文脈（履歴）をリセット</button>
+  
+  <div class="status" id="status">待機中...</div>
+
+  <div class="chat-log" id="chatLog">
+    <div style="color:#666; text-align:center; font-size:13px;">ここにリアルタイム通訳の履歴が表示されます</div>
+  </div>
+</div>
+
+<script>
+  let recognition;
+  let isRunning = false;
+  let isSpeaking = false;
+  let conversationHistory = [];
+
+  // 設定の読み込み
+  window.onload = () => {
+    if (localStorage.getItem("gemini_api_key")) {
+      document.getElementById("apiKey").value = localStorage.getItem("gemini_api_key");
+    }
+    if (localStorage.getItem("gemini_direction")) {
+      document.getElementById("direction").value = localStorage.getItem("gemini_direction");
+    }
+    if (localStorage.getItem("gemini_context")) {
+      document.getElementById("contextPrompt").value = localStorage.getElementById("gemini_context");
+    }
+  };
+
+  function saveSettings() {
+    localStorage.setItem("gemini_api_key", document.getElementById("apiKey").value.trim());
+    localStorage.setItem("gemini_direction", document.getElementById("direction").value);
+    localStorage.setItem("gemini_context", document.getElementById("contextPrompt").value);
+  }
+
+  function clearHistory() {
+    conversationHistory = [];
+    document.getElementById("chatLog").innerHTML = '<div style="color:#666; text-align:center; font-size:13px;">会話履歴をリセットしました</div>';
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  function toggleApp() {
+    if (isRunning) {
+      stopApp();
+    } else {
+      startApp();
+    }
+  }
+
+  function startApp() {
+    const apiKey = document.getElementById("apiKey").value.trim();
+    if (!apiKey) {
+      alert("先にGemini APIキーを入力してください。");
+      return;
+    }
+    if (!SpeechRecognition) {
+      alert("お使いのブラウザは音声認識に対応していません。iPhoneのSafariで開いてください。");
+      return;
+    }
+
+    // iOS Safari対策：最初のボタンタップ時に無音を再生して音声合成エンジンをロック解除する
+    const unlockUtterance = new SpeechSynthesisUtterance("");
+    window.speechSynthesis.speak(unlockUtterance);
+
+    isRunning = true;
+    document.getElementById("toggleBtn").innerText = "通訳を停止する";
+    document.getElementById("toggleBtn").classList.add("stop");
+    initRecognition();
+  }
+
+  function initRecognition() {
+    if (!isRunning) return;
+    const direction = document.getElementById("direction").value;
+    recognition = new SpeechRecognition();
+    recognition.lang = direction === "ja-to-en" ? "ja-JP" : "en-US";
+    recognition.continuous = false; // iOS Safariで安定させるため1文ごとに区切って自動再起動する
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      if (!isSpeaking) {
+        document.getElementById("status").innerText = "🎙️ 聞き取り中... 話してください";
+      }
+    };
+
+    recognition.onresult = async (event) => {
+      const transcript = event.results[0][0].transcript.trim();
+      if (!transcript) return;
+
+      document.getElementById("status").innerText = "🤖 AIが文脈とトーンを解析・翻訳中...";
+      const result = await translateWithGemini(transcript, direction);
+      
+      if (result) {
+        appendLog(transcript, result.translation, result.tone);
+        speakWithTone(result.translation, direction === "ja-to-en" ? "en-US" : "ja-JP", result.rate, result.pitch);
+      }
+    };
+
+    recognition.onerror = (e) => {
+      if (e.error !== "no-speech" && e.error !== "aborted") {
+        document.getElementById("status").innerText = "⚠️ 音声認識エラー: " + e.error;
+      }
+    };
+
+    recognition.onend = () => {
+      // 停止ボタンが押されていなければ即座に次の聞き取りを再開
+      if (isRunning) {
+        setTimeout(() => {
+          try { recognition.start(); } catch (e) {}
+        }, 150);
+      }
+    };
+
+    try {
+      recognition.start();
+    } catch (e) {}
+  }
+
+  function stopApp() {
+    isRunning = false;
+    window.speechSynthesis.cancel();
+    if (recognition) recognition.stop();
+    document.getElementById("toggleBtn").innerText = "通訳スタート（マイクON）";
+    document.getElementById("toggleBtn").classList.remove("stop");
+    document.getElementById("status").innerText = "停止中";
+  }
+
+  async function translateWithGemini(text, direction) {
+    const apiKey = document.getElementById("apiKey").value.trim();
+    const customContext = document.getElementById("contextPrompt").value.trim();
+    const targetLang = direction === "ja-to-en" ? "英語" : "日本語";
+
+    // 直近6往復の履歴をテキスト化
+    const historyText = conversationHistory.slice(-6).map(h => `発言: ${h.orig} -> 訳: ${h.trans}`).join("\n");
+
+    const systemInstruction = `あなたは超一流の同時通訳者です。以下のルールを厳守してください。
+1. 【前提・専門用語・スラング設定】: ${customContext}
+2. 直前の会話の流れ（文脈）を踏まえ、代名詞や省略された主語を自然に補って${targetLang}に翻訳してください。スラング、若者言葉、ネット用語、業界用語も直訳せず、現地のネイティブが同じテンションで使う自然な表現に変換してください。
+3. 発言の感情やテンション（興奮、怒り、落ち着き、早口、丁寧など）を分析し、読み上げ音声の速度(rate: 0.8〜1.3)と声の高さ(pitch: 0.8〜1.3)を決定してください。
+4. 出力は必ず以下のJSON形式のみを返してください。マークダウン記号(\`\`\`)は不要です。
+{"translation": "翻訳文", "tone": "感情・ニュアンスの短い説明", "rate": 1.0, "pitch": 1.0}`;
+
+    const userMessage = `【直近の会話履歴】\n${historyText || "なし"}\n\n【今回の発言】\n${text}`;
+
+    const url = `https://googleapis.com{apiKey}`;
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemInstruction }] },
+          contents: [{ parts: [{ text: userMessage }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        })
+      });
+      const data = await response.json();
+      const rawText = data.candidates[0].content.parts[0].text;
+      const parsed = JSON.parse(rawText);
+
+      // 履歴に追加
+      conversationHistory.push({ orig: text, trans: parsed.translation });
+      return parsed;
+    } catch (error) {
+      document.getElementById("status").innerText = "⚠️ 翻訳APIエラー（通信またはキーを確認）";
+      return null;
+    }
+  }
+
+  function speakWithTone(text, lang, rate, pitch) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.rate = Math.min(Math.max(rate || 1.0, 0.7), 1.4);
+    utterance.pitch = Math.min(Math.max(pitch || 1.0, 0.7), 1.4);
+
+    utterance.onstart = () => {
+      isSpeaking = true;
+      document.getElementById("status").innerText = "🔊 翻訳音声を再生中（マイク待機中）...";
+    };
+    utterance.onend = () => {
+      isSpeaking = false;
+      if (isRunning) document.getElementById("status").innerText = "🎙️ 聞き取り中... 話してください";
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function appendLog(orig, trans, tone) {
+    const log = document.getElementById("chatLog");
+    if (conversationHistory.length === 1) log.innerHTML = "";
+    const div = document.createElement("div");
+    div.className = "msg";
+    div.innerHTML = `
+      <div class="orig">🗣️ ${escapeHtml(orig)}</div>
+      <div class="trans">💬 ${escapeHtml(trans)}</div>
+      <div class="meta">🎭 トーン分析: ${escapeHtml(tone)}</div>
+    `;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+  }
+</script>
+</body>
+</html>
