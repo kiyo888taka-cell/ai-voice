@@ -5,248 +5,131 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>AIライブ同時通訳 Pro</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 15px; background: #121212; color: #ffffff; }
-  .card { background: #1e1e1e; padding: 18px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); max-width: 600px; margin: 0 auto; }
-  h2 { margin-top: 0; font-size: 20px; text-align: center; color: #4da3ff; }
-  label { font-size: 12px; color: #aaa; display: block; margin-top: 10px; }
-  input, select, textarea, button { width: 100%; padding: 12px; margin: 6px 0; border-radius: 10px; border: 1px solid #333; background: #2c2c2c; color: #fff; font-size: 16px; box-sizing: border-box; }
-  textarea { height: 70px; font-size: 14px; resize: vertical; }
-  button { background: #0a84ff; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 12px; transition: 0.2s; }
-  button.stop { background: #ff453a; }
-  button.sub { background: #3a3a3c; font-size: 13px; padding: 8px; margin-top: 6px; }
-  .status { font-size: 13px; color: #30d158; text-align: center; margin: 10px 0; font-weight: bold; word-break: break-all; }
-  .chat-log { background: #161616; padding: 12px; border-radius: 10px; height: 220px; overflow-y: auto; border: 1px solid #2c2c2c; margin-top: 10px; }
-  .msg { margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2a2a2a; }
-  .orig { font-size: 13px; color: #aaa; }
-  .trans { font-size: 16px; color: #fff; font-weight: bold; margin-top: 4px; }
-  .meta { font-size: 11px; color: #4da3ff; margin-top: 2px; }
-  .warn { font-size: 12px; color: #ffd60a; background: rgba(255, 214, 10, 0.1); padding: 8px; border-radius: 8px; margin-bottom: 10px; }
+body{font-family:-apple-system,sans-serif;margin:0;padding:15px;background:#121212;color:#fff}
+.card{background:#1e1e1e;padding:18px;border-radius:16px;max-width:600px;margin:0 auto}
+h2{margin-top:0;font-size:20px;text-align:center;color:#4da3ff}
+label{font-size:12px;color:#aaa;display:block;margin-top:10px}
+input,select,textarea,button{width:100%;padding:12px;margin:6px 0;border-radius:10px;border:1px solid #333;background:#2c2c2c;color:#fff;font-size:16px;box-sizing:border-box}
+textarea{height:70px;font-size:14px}
+button{background:#0a84ff;border:none;font-weight:bold;cursor:pointer;margin-top:12px;-webkit-appearance:none}
+button.stop{background:#ff453a}
+button.sub{background:#3a3a3c;font-size:13px;padding:8px;margin-top:6px}
+.status{font-size:13px;color:#30d158;text-align:center;margin:10px 0;font-weight:bold;word-break:break-all;min-height:20px}
+.chat-log{background:#161616;padding:12px;border-radius:10px;height:220px;overflow-y:auto;border:1px solid #2c2c2c;margin-top:10px}
+.msg{margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #2a2a2a}
+.orig{font-size:13px;color:#aaa}
+.trans{font-size:16px;color:#fff;font-weight:bold;margin-top:4px}
+.meta{font-size:11px;color:#4da3ff;margin-top:2px}
+.warn{font-size:12px;color:#ffd60a;background:rgba(255,214,10,0.1);padding:8px;border-radius:8px;margin-bottom:10px}
 </style>
 </head>
 <body>
 <div class="card">
   <h2>🎙️ AIライブ同時通訳 Pro</h2>
-  <div class="warn">⚠️ 自分の翻訳音声をマイクが拾うのを防ぐため、<strong>イヤホン着用</strong>を強く推奨します。</div>
-
-  <label>Gemini APIキー（自動保存されます）</label>
-  <input type="password" id="apiKey" placeholder="AIzaSy... を貼り付け" onchange="saveSettings()">
-
+  <div class="warn">⚠️ ハウリング防止のため<strong>イヤホン着用</strong>を推奨します。</div>
+  <label>Gemini APIキー（自動保存）</label>
+  <input type="password" id="apiKey" placeholder="AIzaSy... を貼り付け" oninput="save()">
   <label>通訳の方向</label>
-  <select id="direction" onchange="saveSettings()">
+  <select id="direction" onchange="save()">
     <option value="ja-to-en">🇯🇵 日本語 ➔ 🇺🇸 英語（スラング・ニュアンス反映）</option>
     <option value="en-to-ja">🇺🇸 英語 ➔ 🇯🇵 日本語（スラング・ニュアンス反映）</option>
   </select>
-
   <label>前提知識・専門用語・スラング・キャラ設定</label>
-  <textarea id="contextPrompt" placeholder="例：IT開発の現場。カジュアルな友達同士の会話。現地の最新スラングや略語も自然な口語として訳して。" onchange="saveSettings()">カジュアルな日常会話・SNS・ゲーム・ビジネス現場の最新スラングや略語（例: ngl, fr, bet, 草, ヤバい等）のニュアンスを正確に汲み取り、話し手のテンションに合わせた自然な口語で訳してください。</textarea>
-
-  <button id="toggleBtn" onclick="toggleApp()">通訳スタート（マイクON）</button>
-  <button class="sub" onclick="clearHistory()">会話の文脈（履歴）をリセット</button>
-  
+  <textarea id="contextPrompt" oninput="save()">カジュアルな日常会話・SNS・ゲーム・ビジネス現場の最新スラングや略語（ngl, fr, bet, 草, ヤバい等）のニュアンスを汲み取り、話し手のテンションに合わせた自然な口語で訳してください。</textarea>
+  <button type="button" id="toggleBtn">通訳スタート（マイクON）</button>
+  <button type="button" class="sub" id="clearBtn">会話の文脈（履歴）をリセット</button>
   <div class="status" id="status">待機中...</div>
-
-  <div class="chat-log" id="chatLog">
-    <div style="color:#666; text-align:center; font-size:13px;">ここにリアルタイム通訳の履歴が表示されます</div>
-  </div>
+  <div class="chat-log" id="chatLog"><div style="color:#666;text-align:center;font-size:13px">ここにリアルタイム通訳の履歴が表示されます</div></div>
 </div>
-
 <script>
-  let recognition;
-  let isRunning = false;
-  let isSpeaking = false;
-  let conversationHistory = [];
-
-  window.onload = () => {
-    if (localStorage.getItem("gemini_api_key")) {
-      document.getElementById("apiKey").value = localStorage.getItem("gemini_api_key");
-    }
-    if (localStorage.getItem("gemini_direction")) {
-      document.getElementById("direction").value = localStorage.getItem("gemini_direction");
-    }
-    if (localStorage.getItem("gemini_context")) {
-      document.getElementById("contextPrompt").value = localStorage.getItem("gemini_context");
-    }
-  };
-
-  function saveSettings() {
-    localStorage.setItem("gemini_api_key", document.getElementById("apiKey").value.trim());
-    localStorage.setItem("gemini_direction", document.getElementById("direction").value);
-    localStorage.setItem("gemini_context", document.getElementById("contextPrompt").value);
-  }
-
-  function clearHistory() {
-    conversationHistory = [];
-    document.getElementById("chatLog").innerHTML = '<div style="color:#666; text-align:center; font-size:13px;">会話履歴をリセットしました</div>';
-  }
-
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  function toggleApp() {
-    if (isRunning) {
-      stopApp();
-    } else {
-      startApp();
-    }
-  }
-
-  function startApp() {
-    const apiKey = document.getElementById("apiKey").value.trim();
-    if (!apiKey) {
-      alert("先にGemini APIキーを入力してください。");
-      return;
-    }
-    saveSettings();
-
-    if (!SpeechRecognition) {
-      alert("お使いのブラウザは音声認識に対応していません。iPhoneのSafariで開いてください。");
-      return;
-    }
-
-    const unlockUtterance = new SpeechSynthesisUtterance("");
-    window.speechSynthesis.speak(unlockUtterance);
-
-    isRunning = true;
-    document.getElementById("toggleBtn").innerText = "通訳を停止する";
-    document.getElementById("toggleBtn").classList.add("stop");
-    initRecognition();
-  }
-
-  function initRecognition() {
-    if (!isRunning) return;
-    const direction = document.getElementById("direction").value;
-    recognition = new SpeechRecognition();
-    recognition.lang = direction === "ja-to-en" ? "ja-JP" : "en-US";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    recognition.onstart = () => {
-      if (!isSpeaking) {
-        document.getElementById("status").innerText = "🎙️ 聞き取り中... 話してください";
-      }
+let rec=null,run=false,spk=false,hist=[];
+document.addEventListener("DOMContentLoaded",()=>{
+  if(localStorage.getItem("g_key"))document.getElementById("apiKey").value=localStorage.getItem("g_key");
+  if(localStorage.getItem("g_dir"))document.getElementById("direction").value=localStorage.getItem("g_dir");
+  if(localStorage.getItem("g_ctx"))document.getElementById("contextPrompt").value=localStorage.getItem("g_ctx");
+  document.getElementById("toggleBtn").addEventListener("click",toggle);
+  document.getElementById("clearBtn").addEventListener("click",()=>{hist=[];document.getElementById("chatLog").innerHTML="";});
+});
+function save(){
+  localStorage.setItem("g_key",document.getElementById("apiKey").value.trim());
+  localStorage.setItem("g_dir",document.getElementById("direction").value);
+  localStorage.setItem("g_ctx",document.getElementById("contextPrompt").value);
+}
+function toggle(){run?stop():start();}
+function start(){
+  const st=document.getElementById("status"),key=document.getElementById("apiKey").value.trim();
+  if(!key){st.innerText="⚠️ APIキーを入力してください";return;}
+  save();
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){st.innerText="⚠️ Safariで開いてください";return;}
+  try{if(window.speechSynthesis)window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));}catch(e){}
+  run=true;
+  const btn=document.getElementById("toggleBtn");
+  btn.innerText="通訳を停止する";btn.classList.add("stop");
+  st.innerText="⏳ マイク起動中...";
+  initRec();
+}
+function initRec(){
+  if(!run)return;
+  const st=document.getElementById("status"),SR=window.SpeechRecognition||window.webkitSpeechRecognition,dir=document.getElementById("direction").value;
+  try{
+    rec=new SR();rec.lang=dir==="ja-to-en"?"ja-JP":"en-US";rec.continuous=false;rec.interimResults=false;
+    rec.onstart=()=>{if(!spk)st.innerText="🎙️ 聞き取り中... 話してください";};
+    rec.onresult=async(e)=>{
+      const txt=e.results[e.results.length-1].transcript.trim();
+      if(!txt)return;
+      st.innerText="🤖 AIが文脈とトーンを解析中...";
+      const res=await trans(txt,dir);
+      if(res){logMsg(txt,res.translation,res.tone);speak(res.translation,dir==="ja-to-en"?"en-US":"ja-JP",res.rate,res.pitch);}
     };
-
-    recognition.onresult = async (event) => {
-      const lastIndex = event.results.length - 1;
-      const transcript = event.results[lastIndex][0].transcript.trim();
-      if (!transcript) return;
-
-      document.getElementById("status").innerText = "🤖 AIが文脈とトーンを解析・翻訳中...";
-      const result = await translateWithGemini(transcript, direction);
-      
-      if (result) {
-        appendLog(transcript, result.translation, result.tone);
-        speakWithTone(result.translation, direction === "ja-to-en" ? "en-US" : "ja-JP", result.rate, result.pitch);
-      }
+    rec.onerror=(e)=>{
+      if(e.error==="not-allowed"){st.innerText="⚠️ マイクが許可されていません";stop();}
+      else if(e.error!=="no-speech"&&e.error!=="aborted"){st.innerText="⚠️ 音声エラー: "+e.error;}
     };
-
-    recognition.onerror = (e) => {
-      if (e.error !== "no-speech" && e.error !== "aborted") {
-        document.getElementById("status").innerText = "⚠️ 音声認識エラー: " + e.error;
-      }
-    };
-
-    recognition.onend = () => {
-      if (isRunning) {
-        setTimeout(() => {
-          try { recognition.start(); } catch (e) {}
-        }, 150);
-      }
-    };
-
-    try {
-      recognition.start();
-    } catch (e) {}
-  }
-
-  function stopApp() {
-    isRunning = false;
-    window.speechSynthesis.cancel();
-    if (recognition) recognition.stop();
-    document.getElementById("toggleBtn").innerText = "通訳スタート（マイクON）";
-    document.getElementById("toggleBtn").classList.remove("stop");
-    document.getElementById("status").innerText = "停止中";
-  }
-
-  async function translateWithGemini(text, direction) {
-    const apiKey = document.getElementById("apiKey").value.trim();
-    const customContext = document.getElementById("contextPrompt").value.trim();
-    const targetLang = direction === "ja-to-en" ? "英語" : "日本語";
-
-    const historyText = conversationHistory.slice(-6).map(h => `発言: ${h.orig} -> 訳: ${h.trans}`).join("\n");
-
-    const systemInstruction = `あなたは超一流の同時通訳者です。以下のルールを厳守してください。
-1. 【前提・専門用語・スラング設定】: ${customContext}
-2. 直前の会話の流れ（文脈）を踏まえ、代名詞や省略された主語を自然に補って${targetLang}に翻訳してください。スラング、若者言葉、ネット用語、業界用語も直訳せず、現地のネイティブが同じテンションで使う自然な表現に変換してください。
-3. 発言の感情やテンション（興奮、怒り、落ち着き、早口、丁寧など）を分析し、読み上げ音声の速度(rate: 0.8〜1.3)と声の高さ(pitch: 0.8〜1.3)を決定してください。
-4. 出力は必ず以下のJSON形式のみを返してください。マークダウン記号(\`\`\`)は不要です。
-{"translation": "翻訳文", "tone": "感情・ニュアンスの短い説明", "rate": 1.0, "pitch": 1.0}`;
-
-    const userMessage = `【直近の会話履歴】\n${historyText || "なし"}\n\n【今回の発言】\n${text}`;
-
-    const url = `https://googleapis.com{encodeURIComponent(apiKey)}`;
-
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemInstruction }] },
-          contents: [{ parts: [{ text: userMessage }] }],
-          generationConfig: { responseMimeType: "application/json" }
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        const errMsg = data.error ? data.error.message : "HTTP " + response.status;
-        document.getElementById("status").innerText = "⚠️ Google APIエラー: " + errMsg;
-        return null;
-      }
-
-      const rawText = data.candidates[0].content.parts[0].text;
-      const cleanedText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
-      const parsed = JSON.parse(cleanedText);
-
-      conversationHistory.push({ orig: text, trans: parsed.translation });
-      return parsed;
-    } catch (error) {
-      document.getElementById("status").innerText = "⚠️ 処理エラー: " + error.message;
-      return null;
-    }
-  }
-
-  function speakWithTone(text, lang, rate, pitch) {
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = lang;
-    utterance.rate = Math.min(Math.max(rate || 1.0, 0.7), 1.4);
-    utterance.pitch = Math.min(Math.max(pitch || 1.0, 0.7), 1.4);
-
-    utterance.onstart = () => {
-      isSpeaking = true;
-      document.getElementById("status").innerText = "🔊 翻訳音声を再生中（マイク待機中）...";
-    };
-    utterance.onend = () => {
-      isSpeaking = false;
-      if (isRunning) document.getElementById("status").innerText = "🎙️ 聞き取り中... 話してください";
-    };
-
-    window.speechSynthesis.speak(utterance);
-  }
-
-  function appendLog(orig, trans, tone) {
-    const log = document.getElementById("chatLog");
-    if (conversationHistory.length === 1) log.innerHTML = "";
-    const div = document.createElement("div");
-    div.className = "msg";
-    div.innerHTML = `
-      <div class="orig">🗣️ ${escapeHtml(orig)}</div>
-      <div class="trans">💬 ${escapeHtml(trans)}</div>
-      <div class="meta">🎭 トーン分析: ${escapeHtml(tone)}</div>
-    `;
-    log.appendChild(div);
-    log.scrollTop = log.scrollHeight;
-  }
-
-  function escapeHtml(str) {
+    rec.onend=()=>{if(run)setTimeout(()=>{if(run)try{rec.start();}catch(e){}},200);};
+    rec.start();
+  }catch(e){st.innerText="⚠️ 起動エラー: "+e.message;stop();}
+}
+function stop(){
+  run=false;
+  try{if(window.speechSynthesis)window.speechSynthesis.cancel();}catch(e){}
+  try{if(rec)rec.stop();}catch(e){}
+  const btn=document.getElementById("toggleBtn");
+  btn.innerText="通訳スタート（マイクON）";btn.classList.remove("stop");
+  document.getElementById("status").innerText="停止中";
+}
+async function trans(text,dir){
+  const key=document.getElementById("apiKey").value.trim(),ctx=document.getElementById("contextPrompt").value.trim(),lang=dir==="ja-to-en"?"英語":"日本語",st=document.getElementById("status");
+  const hTxt=hist.slice(-6).map(h=>"発言:"+h.o+" -> 訳:"+h.t).join("\n");
+  const sys="超一流の同時通訳者として以下を厳守。\n1.前提・専門用語・スラング設定:"+ctx+"\n2.直前の文脈を踏まえ、スラングや若者言葉もネイティブが同じテンションで使う自然な"+lang+"に訳す。\n3.感情やテンションから速度(rate:0.8〜1.3)と声の高さ(pitch:0.8〜1.3)を決める。\n4.必ずJSONのみ出力: {\"translation\":\"訳文\",\"tone\":\"感情説明\",\"rate\":1.0,\"pitch\":1.0}";
+  const msg="【履歴】\n"+(hTxt||"なし")+"\n【今回】\n"+text;
+  try{
+    const r=await fetch("https://googleapis.com"+encodeURIComponent(key),{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{parts:[{text:msg}]}],generationConfig:{responseMimeType:"application/json"}})
+    });
+    const d=await r.json();
+    if(!r.ok){st.innerText="⚠️ APIエラー: "+(d.error?d.error.message:r.status);return null;}
+    const p=JSON.parse(d.candidates.content.parts.text.replace(/[\x60]/g,"").replace(/^json/i,"").trim());
+    hist.push({o:text,t:p.translation});
+    return p;
+  }catch(e){st.innerText="⚠️ 処理エラー: "+e.message;return null;}
+}
+function speak(t,l,r,p){
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t);u.lang=l;u.rate=Math.min(Math.max(r||1,0.7),1.4);u.pitch=Math.min(Math.max(p||1,0.7),1.4);
+  u.onstart=()=>{spk=true;document.getElementById("status").innerText="🔊 翻訳音声を再生中...";};
+  u.onend=()=>{spk=false;if(run)document.getElementById("status").innerText="🎙️ 聞き取り中... 話してください";};
+  window.speechSynthesis.speak(u);
+}
+function logMsg(o,t,tn){
+  const log=document.getElementById("chatLog");
+  if(hist.length===1)log.innerHTML="";
+  const d=document.createElement("div");d.className="msg";
+  d.innerHTML='<div class="orig">🗣️ '+o+'</div><div class="trans">💬 '+t+'</div><div class="meta">🎭 '+tn+'</div>';
+  log.appendChild(d);log.scrollTop=log.scrollHeight;
+}
+</script>
+</body>
+</html>
