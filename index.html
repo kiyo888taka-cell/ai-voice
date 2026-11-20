@@ -80,8 +80,9 @@ function initRec(){
     rec.onresult=async(e)=>{
       let interim="",finalTxt="";
       for(let i=e.resultIndex;i<e.results.length;i++){
-        const str=e.results[i][0].transcript;
-        if(e.results[i].isFinal)finalTxt+=str;
+        const resItem=e.results.item(i);
+        const str=resItem.item(0).transcript;
+        if(resItem.isFinal)finalTxt+=str;
         else interim+=str;
       }
       if(interim)live.innerText="🗣️ 聞き取り中: "+interim;
@@ -128,7 +129,7 @@ async function trans(text,dir){
     });
     const d=await r.json();
     if(!r.ok){st.innerText="⚠️ APIエラー: "+(d.error?d.error.message:r.status);return null;}
-    const raw=d.candidates[0].content.parts[0].text;
+    const raw=d.candidates.at(0).content.parts.at(0).text;
     const p=JSON.parse(raw.replace(/[\x60]/g,"").replace(/^json/i,"").trim());
     hist.push({o:text,t:p.translation});
     return p;
