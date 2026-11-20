@@ -56,8 +56,18 @@ details{margin-top:8px}summary{font-size:13px;color:#4da3ff;padding:6px 0}
 <div><label>文字サイズ</label><select id="fontSize">
 <option value="14">小</option><option value="16">中</option><option value="20">大</option><option value="26">特大</option></select></div>
 </div>
-<label>前提知識・専門用語・スラング設定</label>
-<textarea id="contextPrompt">カジュアルな会話やSNS・ゲーム・ビジネスのスラングや略語のニュアンスを汲み、話し手のテンションに合わせた自然な口語で訳す。</textarea>
+<label>コンテンツの種類</label>
+<select id="scene">
+<option value="vlog">Vlog・YouTubeトーク</option>
+<option value="game">ゲーム実況・配信</option>
+<option value="talk">ポッドキャスト・対談</option>
+<option value="chat">友人同士の雑談</option>
+<option value="news">ニュース・解説</option>
+</select>
+<label>話題・登場人物メモ（例: ○○というゲームの配信者Jack）</label>
+<textarea id="contextPrompt" placeholder="誰が何について話しているか"></textarea>
+<label>用語集（1行ずつ「原語=訳」）</label>
+<textarea id="gloss" placeholder="GG=ナイスゲーム&#10;Jack=ジャック"></textarea>
 <button type="button" class="sub" id="testBtn">🔊 翻訳テスト（「聞こえますか」）</button>
 <button type="button" class="sub" id="clearBtn">履歴・文脈をリセット</button>
 </details>
@@ -66,7 +76,7 @@ details{margin-top:8px}summary{font-size:13px;color:#4da3ff;padding:6px 0}
 const MODEL="gemini-3.1-flash-lite";
 const API_URL="https://generativelanguage.googleapis.com/v1beta/models/"+MODEL+":generateContent?key=";
 const $=id=>document.getElementById(id);
-const MAP={apiKey:"g_key",direction:"g_dir",contextPrompt:"g_ctx",rate:"g_rate",fontSize:"g_fs",stable:"g_st"};
+const MAP={apiKey:"g_key",direction:"g_dir",scene:"g_scene",contextPrompt:"g_topic",gloss:"g_gloss",rate:"g_rate",fontSize:"g_fs",stable:"g_st"};
 let rec=null,run=false,hist=[],chain=Promise.resolve(),queued=0,sentLen=0,latestFull="",timer=null,wake=null;
 const setSt=m=>{$("status").innerText=m;};
 window.onerror=m=>setSt("⚠️ JSエラー: "+m);
@@ -98,7 +108,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   load();loadVoices();
   if(window.speechSynthesis)speechSynthesis.onvoiceschanged=loadVoices;
   for(const id in MAP)$(id).addEventListener("change",()=>{save();if(id==="fontSize")applyFs();if(id==="direction"){loadVoices();}});
-  $("apiKey").addEventListener("input",save);$("contextPrompt").addEventListener("input",save);
+  $("apiKey").addEventListener("input",save);$("contextPrompt").addEventListener("input",save);$("gloss").addEventListener("input",save);
   $("voice").addEventListener("change",()=>localStorage.setItem("g_voice_"+outLang().slice(0,2),$("voice").value));
   $("toggleBtn").addEventListener("click",()=>run?stop():start());
   $("clearBtn").addEventListener("click",()=>{hist=[];$("chatLog").innerHTML="";$("latest").innerText="";});
@@ -127,11 +137,20 @@ function stop(){
   setSt("停止中");
 }
 
-function flush(){
+const INC_EN=/\b(and|but|so|because|that|which|who|to|of|the|a|an|with|or|if|when|while|like|as|for|in|on|at|my|your|i|you|we|they|is|are|was|just|really)$/i;
+const INC_JA=/(が|けど|けれど|て|で|し|から|ので|を|に|は|の|と|や|って|たら|ば)$/;
+function incomplete(t){
+  if(/[.?!。？！]$/.test(t))return false;
+  return inLang()==="ja-JP"?INC_JA.test(t):INC_EN.test(t.replace(/[,…]+$/,"").trim());
+}
+function flush(force){
   clearTimeout(timer);
   const t=latestFull.slice(sentLen).trim();
+  if(!t)return;
+  const maxLen=inLang()==="ja-JP"?40:90;
+  if(force!==true&&incomplete(t)&&t.length<maxLen){timer=setTimeout(()=>flush(true),1200);return;}
   sentLen=latestFull.length;
-  if(t){$("liveText").innerText="✅ 確定: "+t;enqueue(t,false);}
+  $("liveText").innerText="✅ 確定: "+t;enqueue(t,false);
 }
 
 function startRec(){
@@ -151,13 +170,13 @@ function startRec(){
     $("liveText").innerText="🗣️ "+pend;
     clearTimeout(timer);
     if(e.results[e.results.length-1].isFinal){flush();}
-    else if(pend){timer=setTimeout(flush,pend.length>maxLen?200:+$("stable").value);}
+    else if(pend){const big=pend.length>maxLen;timer=setTimeout(()=>flush(big),big?200:+$("stable").value);}
   };
   rec.onerror=e=>{
     if(e.error==="not-allowed"||e.error==="service-not-allowed"){setSt("⚠️ マイクが許可されていません");stop();}
     else if(e.error!=="no-speech"&&e.error!=="aborted")setSt("⚠️ 音声エラー: "+e.error+"（自動再開します）");
   };
-  rec.onend=()=>{flush();if(run)setTimeout(startRec,250);};
+  rec.onend=()=>{flush(true);if(run)setTimeout(startRec,250);};
   try{rec.start();}catch(e){setTimeout(startRec,500);}
 }
 
@@ -172,11 +191,18 @@ function enqueue(text,test){
 }
 
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const SCENE={game:"ゲーム実況・配信。テンション高め、ゲーム用語が多い。",vlog:"VlogやYouTubeの一人語り。カジュアル。",talk:"ポッドキャストや対談。話者が入れ替わる。",chat:"友人同士の砕けた雑談。",news:"ニュース・解説。丁寧で正確な語調。"};
+const SLANG="スラング目安: ngl=正直/fr=マジで/bet=了解・いいね/no cap=ガチで/lowkey=ちょっと・内心/highkey=めっちゃ/cooked=終わった/mid=微妙/sus=怪しい/rizz=モテ力/goated=神/based=筋が通ってて最高/bruh=おいおい/deadass=マジで/slay=最高・決まってる/ate=完璧だった/W・L=勝ち・負け/salty=ふてくされ/tilted=イライラ/fire=ヤバくて良い/vibe=雰囲気/ghost=音信不通/cringe=痛い。";
 async function trans(text,dir){
   const key=encodeURIComponent($("apiKey").value.replace(/\s+/g,""));
   const lang=dir==="ja-to-en"?"英語":"日本語";
-  const sys="あなたは同時通訳者。入力を自然な口語の"+lang+"に訳し、訳文のみを出力する。説明・注釈・引用符・前置きは一切不要。固有名詞は音に近い表記、スラングはネイティブが同じテンションで使う表現に。補足設定: "+$("contextPrompt").value.trim();
-  const h=hist.slice(-4).map(x=>x.o+" => "+x.t).join("\n");
+  const ej=dir==="en-to-ja";
+  const rules=ej
+    ?"あなたは同時通訳者。英語の発話を、耳で聞いて自然な話し言葉の日本語に訳し、訳文のみ出力する。\n規則:\n1.言いよどみ(um, uh, like, you know)や言い直しは省く。\n2.長い文は短く区切り、「〜で、」「〜けど、」でつなぎ、日本語として自然な語順にする。\n3.音声認識の誤変換は文脈と用語集から補正する。\n4.入力は文の途中で切れていることがある。直前の訳の続きとして自然につなぎ、訳済みの部分は繰り返さない。\n5.スラング・略語・ネットミームは直訳せず、日本語話者が同じテンションで使う表現(ガチで、エグい、ヤバい等)に置き換える。不明なら文脈から推測する。\n6.罵倒や下品な表現も弱めすぎず、話者の強さに合わせる。\n"+SLANG
+    :"You are a simultaneous interpreter. Translate the Japanese speech into natural spoken English, as a native would say it with the same energy. Output the translation only. Drop fillers, fix likely speech-recognition errors from context, split long sentences, treat input as possibly cut mid-sentence (continue naturally from the previous translation, never repeat it), and render Japanese slang with equivalent English slang.\n";
+  const topic=$("contextPrompt").value.trim(),gl=$("gloss").value.trim();
+  const sys=rules+"\n場面: "+(SCENE[$("scene").value]||"")+(topic?"\n話題・登場人物: "+topic:"")+(gl?"\n用語集(必ず従う):\n"+gl:"");
+  const h=hist.slice(-6).map(x=>x.o+" => "+x.t).join("\n");
   const msg=(h?"【直前の文脈】\n"+h+"\n":"")+"【訳す文】\n"+text;
   const body=JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{parts:[{text:msg}]}],generationConfig:{temperature:0.3,maxOutputTokens:400}});
   for(let n=0;n<3;n++){
