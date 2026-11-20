@@ -101,7 +101,7 @@ function initRec(){
             speak(res.translation,dir==="ja-to-en"?"en-US":"ja-JP",res.rate,res.pitch);
           }
           if(run)setTimeout(initRec,400);
-        },400);
+        },500);
       }
     };
     rec.onerror=(e)=>{
@@ -121,13 +121,17 @@ function stop(){
   document.getElementById("status").innerText="停止中";
 }
 async function trans(text,dir){
-  const key=document.getElementById("apiKey").value.trim(),ctx=document.getElementById("contextPrompt").value.trim(),lang=dir==="ja-to-en"?"英語":"日本語",st=document.getElementById("status");
+  const rawKey=document.getElementById("apiKey").value;
+  const key=rawKey.replace(/[^a-zA-Z0-9_-]/g,"");
+  const ctx=document.getElementById("contextPrompt").value.trim(),lang=dir==="ja-to-en"?"英語":"日本語",st=document.getElementById("status");
   const hTxt=hist.slice(-6).map(h=>"発言:"+h.o+" -> 訳:"+h.t).join("\n");
   const sys="超一流の同時通訳者として以下を厳守。\n1.前提・専門用語・スラング設定:"+ctx+"\n2.直前の文脈を踏まえ、スラングや若者言葉もネイティブが同じテンションで使う自然な"+lang+"に訳す。\n3.感情やテンションから速度(rate:0.8〜1.3)と声の高さ(pitch:0.8〜1.3)を決める。\n4.必ずJSONのみ出力: {\"translation\":\"訳文\",\"tone\":\"感情説明\",\"rate\":1.0,\"pitch\":1.0}";
   const msg="【履歴】\n"+(hTxt||"なし")+"\n【今回】\n"+text;
   try{
-    const r=await fetch("https://googleapis.com"+encodeURIComponent(key),{
-      method:"POST",headers:{"Content-Type":"application/json"},
+    const r=await fetch("https://googleapis.com",{
+      method:"POST",
+      referrerPolicy:"no-referrer",
+      headers:{"Content-Type":"application/json","x-goog-api-key":key},
       body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{parts:[{text:msg}]}],generationConfig:{responseMimeType:"application/json"}})
     });
     const d=await r.json();
@@ -136,7 +140,7 @@ async function trans(text,dir){
     const p=JSON.parse(raw.replace(/[\x60]/g,"").replace(/^json/i,"").trim());
     hist.push({o:text,t:p.translation});
     return p;
-  }catch(e){st.innerText="⚠️ 処理エラー: "+e.message;return null;}
+  }catch(e){st.innerText="⚠️ 通信詳細: "+e.name+" / "+e.message;return null;}
 }
 function speak(t,l,r,p){
   if(!window.speechSynthesis)return;
