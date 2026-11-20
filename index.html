@@ -27,7 +27,7 @@ button.sub{background:#3a3a3c;font-size:13px;padding:8px;margin-top:6px}
 <body>
 <div class="card">
   <h2>🎙️ AIライブ同時通訳 Pro</h2>
-  <div class="warn">⚠️ <strong>イヤホン着用</strong>を推奨。iPhoneの「設定＞一般＞キーボード＞音声入力」がONか確認してください。</div>
+  <div class="warn">⚠️ <strong>イヤホン着用</strong>を推奨します。</div>
   <label>Gemini APIキー（自動保存）</label>
   <input type="password" id="apiKey" placeholder="AIzaSy... を貼り付け" oninput="save()">
   <label>通訳の方向</label>
@@ -40,11 +40,11 @@ button.sub{background:#3a3a3c;font-size:13px;padding:8px;margin-top:6px}
   <button type="button" id="toggleBtn">通訳スタート（マイクON）</button>
   <button type="button" class="sub" id="clearBtn">会話の文脈（履歴）をリセット</button>
   <div class="status" id="status">待機中...</div>
-  <div class="live-box" id="liveText">🗣️ ここに認識中の言葉がリアルタイム表示されます...</div>
+  <div class="live-box" id="liveText">🗣️ ここに認識中の言葉が表示されます...</div>
   <div class="chat-log" id="chatLog"><div style="color:#666;text-align:center;font-size:13px">ここに通訳履歴が表示されます</div></div>
 </div>
 <script>
-let rec=null,run=false,spk=false,hist=[];
+let rec=null,run=false,spk=false,busy=false,hist=[];
 document.addEventListener("DOMContentLoaded",()=>{
   if(localStorage.getItem("g_key"))document.getElementById("apiKey").value=localStorage.getItem("g_key");
   if(localStorage.getItem("g_dir"))document.getElementById("direction").value=localStorage.getItem("g_dir");
@@ -65,43 +65,51 @@ function start(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){st.innerText="⚠️ Safariで開いてください";return;}
   try{if(window.speechSynthesis)window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));}catch(e){}
-  run=true;
+  run=true;busy=false;
   const btn=document.getElementById("toggleBtn");
   btn.innerText="通訳を停止する";btn.classList.add("stop");
   st.innerText="⏳ マイク起動中...";
   initRec();
 }
 function initRec(){
-  if(!run)return;
+  if(!run||busy)return;
   const st=document.getElementById("status"),live=document.getElementById("liveText"),SR=window.SpeechRecognition||window.webkitSpeechRecognition,dir=document.getElementById("direction").value;
   try{
-    rec=new SR();rec.lang=dir==="ja-to-en"?"ja-JP":"en-US";rec.continuous=true;rec.interimResults=true;
-    rec.onstart=()=>{if(!spk)st.innerText="🎙️ 聞き取り中... 話してください";};
+    rec=new SR();rec.lang=dir==="ja-to-en"?"ja-JP":"en-US";rec.continuous=false;rec.interimResults=true;
+    rec.onstart=()=>{if(!spk&&!busy)st.innerText="🎙️ 聞き取り中... 話してください";};
     rec.onresult=async(e)=>{
       let interim="",finalTxt="";
       for(let i=e.resultIndex;i<e.results.length;i++){
-        if(e.results[i].isFinal)finalTxt+=e.results[i].transcript;
-        else interim+=e.results[i].transcript;
+        const str=e.results[i][0].transcript;
+        if(e.results[i].isFinal)finalTxt+=str;
+        else interim+=str;
       }
       if(interim)live.innerText="🗣️ 聞き取り中: "+interim;
-      if(finalTxt.trim()){
+      if(finalTxt.trim()&&!busy){
+        busy=true;
+        try{rec.stop();}catch(err){}
         const txt=finalTxt.trim();
         live.innerText="✅ 確定: "+txt;
-        st.innerText="🤖 AIが文脈とトーンを解析中...";
+        st.innerText="🤖 AIが翻訳中...";
         const res=await trans(txt,dir);
-        if(res){logMsg(txt,res.translation,res.tone);speak(res.translation,dir==="ja-to-en"?"en-US":"ja-JP",res.rate,res.pitch);}
+        busy=false;
+        if(res){
+          logMsg(txt,res.translation,res.tone);
+          speak(res.translation,dir==="ja-to-en"?"en-US":"ja-JP",res.rate,res.pitch);
+        }
+        if(run)setTimeout(initRec,300);
       }
     };
     rec.onerror=(e)=>{
-      if(e.error==="not-allowed"||e.error==="service-not-allowed"){st.innerText="⚠️ マイクまたは音声入力が許可されていません";stop();}
+      if(e.error==="not-allowed"||e.error==="service-not-allowed"){st.innerText="⚠️ マイクが許可されていません";stop();}
       else if(e.error!=="no-speech"&&e.error!=="aborted"){st.innerText="⚠️ 音声エラー: "+e.error;}
     };
-    rec.onend=()=>{if(run)setTimeout(()=>{if(run)try{rec.start();}catch(e){}},250);};
+    rec.onend=()=>{if(run&&!busy)setTimeout(initRec,250);};
     rec.start();
   }catch(e){st.innerText="⚠️ 起動エラー: "+e.message;stop();}
 }
 function stop(){
-  run=false;
+  run=false;busy=false;
   try{if(window.speechSynthesis)window.speechSynthesis.cancel();}catch(e){}
   try{if(rec)rec.stop();}catch(e){}
   const btn=document.getElementById("toggleBtn");
@@ -120,7 +128,8 @@ async function trans(text,dir){
     });
     const d=await r.json();
     if(!r.ok){st.innerText="⚠️ APIエラー: "+(d.error?d.error.message:r.status);return null;}
-    const p=JSON.parse(d.candidates.content.parts.text.replace(/[\x60]/g,"").replace(/^json/i,"").trim());
+    const raw=d.candidates[0].content.parts[0].text;
+    const p=JSON.parse(raw.replace(/[\x60]/g,"").replace(/^json/i,"").trim());
     hist.push({o:text,t:p.translation});
     return p;
   }catch(e){st.innerText="⚠️ 処理エラー: "+e.message;return null;}
