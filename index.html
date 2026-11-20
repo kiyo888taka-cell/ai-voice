@@ -75,9 +75,10 @@ function initRec(){
   if(!run||busy)return;
   const st=document.getElementById("status"),live=document.getElementById("liveText"),SR=window.SpeechRecognition||window.webkitSpeechRecognition,dir=document.getElementById("direction").value;
   try{
+    if(rec){try{rec.onend=null;rec.abort();}catch(e){}rec=null;}
     rec=new SR();rec.lang=dir==="ja-to-en"?"ja-JP":"en-US";rec.continuous=false;rec.interimResults=true;
     rec.onstart=()=>{if(!spk&&!busy)st.innerText="🎙️ 聞き取り中... 話してください";};
-    rec.onresult=async(e)=>{
+    rec.onresult=(e)=>{
       let interim="",finalTxt="";
       for(let i=e.resultIndex;i<e.results.length;i++){
         const resItem=e.results.item(i);
@@ -88,31 +89,33 @@ function initRec(){
       if(interim)live.innerText="🗣️ 聞き取り中: "+interim;
       if(finalTxt.trim()&&!busy){
         busy=true;
-        try{rec.stop();}catch(err){}
+        try{rec.onend=null;rec.stop();}catch(err){}
         const txt=finalTxt.trim();
         live.innerText="✅ 確定: "+txt;
         st.innerText="🤖 AIが翻訳中...";
-        const res=await trans(txt,dir);
-        busy=false;
-        if(res){
-          logMsg(txt,res.translation,res.tone);
-          speak(res.translation,dir==="ja-to-en"?"en-US":"ja-JP",res.rate,res.pitch);
-        }
-        if(run)setTimeout(initRec,300);
+        setTimeout(async()=>{
+          const res=await trans(txt,dir);
+          busy=false;
+          if(res){
+            logMsg(txt,res.translation,res.tone);
+            speak(res.translation,dir==="ja-to-en"?"en-US":"ja-JP",res.rate,res.pitch);
+          }
+          if(run)setTimeout(initRec,400);
+        },400);
       }
     };
     rec.onerror=(e)=>{
       if(e.error==="not-allowed"||e.error==="service-not-allowed"){st.innerText="⚠️ マイクが許可されていません";stop();}
       else if(e.error!=="no-speech"&&e.error!=="aborted"){st.innerText="⚠️ 音声エラー: "+e.error;}
     };
-    rec.onend=()=>{if(run&&!busy)setTimeout(initRec,250);};
+    rec.onend=()=>{if(run&&!busy)setTimeout(initRec,350);};
     rec.start();
-  }catch(e){st.innerText="⚠️ 起動エラー: "+e.message;stop();}
+  }catch(e){if(run&&!busy)setTimeout(initRec,500);}
 }
 function stop(){
   run=false;busy=false;
   try{if(window.speechSynthesis)window.speechSynthesis.cancel();}catch(e){}
-  try{if(rec)rec.stop();}catch(e){}
+  try{if(rec){rec.onend=null;rec.abort();rec=null;}}catch(e){}
   const btn=document.getElementById("toggleBtn");
   btn.innerText="通訳スタート（マイクON）";btn.classList.remove("stop");
   document.getElementById("status").innerText="停止中";
