@@ -149,7 +149,7 @@ function stop(){
 function trans(text,dir){
   return new Promise(resolve=>{
     const rawKey=document.getElementById("apiKey").value;
-    const key=rawKey.replace(/[^a-zA-Z0-9_-]/g,"");
+    const key=encodeURIComponent(rawKey.replace(/\s+/g,""));
     const ctx=document.getElementById("contextPrompt").value.trim(),lang=dir==="ja-to-en"?"英語":"日本語",st=document.getElementById("status");
     if(!key){st.innerText="⚠️ APIキーが空です";resolve(null);return;}
     const hTxt=hist.slice(-6).map(h=>"発言:"+h.o+" -> 訳:"+h.t).join("\n");
