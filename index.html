@@ -10,12 +10,13 @@ body{font-family:-apple-system,sans-serif;margin:0;padding:15px;background:#1212
 h2{margin-top:0;font-size:20px;text-align:center;color:#4da3ff}
 label{font-size:12px;color:#aaa;display:block;margin-top:10px}
 input,select,textarea,button{width:100%;padding:12px;margin:6px 0;border-radius:10px;border:1px solid #333;background:#2c2c2c;color:#fff;font-size:16px;box-sizing:border-box}
-textarea{height:70px;font-size:14px}
+textarea{height:65px;font-size:14px}
 button{background:#0a84ff;border:none;font-weight:bold;cursor:pointer;margin-top:12px;-webkit-appearance:none}
 button.stop{background:#ff453a}
 button.sub{background:#3a3a3c;font-size:13px;padding:8px;margin-top:6px}
 .status{font-size:13px;color:#30d158;text-align:center;margin:10px 0;font-weight:bold;word-break:break-all;min-height:20px}
-.chat-log{background:#161616;padding:12px;border-radius:10px;height:220px;overflow-y:auto;border:1px solid #2c2c2c;margin-top:10px}
+.live-box{background:#252528;padding:10px;border-radius:8px;font-size:14px;color:#ffd60a;min-height:22px;margin-bottom:8px;border:1px dashed #444}
+.chat-log{background:#161616;padding:12px;border-radius:10px;height:210px;overflow-y:auto;border:1px solid #2c2c2c}
 .msg{margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #2a2a2a}
 .orig{font-size:13px;color:#aaa}
 .trans{font-size:16px;color:#fff;font-weight:bold;margin-top:4px}
@@ -26,7 +27,7 @@ button.sub{background:#3a3a3c;font-size:13px;padding:8px;margin-top:6px}
 <body>
 <div class="card">
   <h2>🎙️ AIライブ同時通訳 Pro</h2>
-  <div class="warn">⚠️ ハウリング防止のため<strong>イヤホン着用</strong>を推奨します。</div>
+  <div class="warn">⚠️ <strong>イヤホン着用</strong>を推奨。iPhoneの「設定＞一般＞キーボード＞音声入力」がONか確認してください。</div>
   <label>Gemini APIキー（自動保存）</label>
   <input type="password" id="apiKey" placeholder="AIzaSy... を貼り付け" oninput="save()">
   <label>通訳の方向</label>
@@ -39,7 +40,8 @@ button.sub{background:#3a3a3c;font-size:13px;padding:8px;margin-top:6px}
   <button type="button" id="toggleBtn">通訳スタート（マイクON）</button>
   <button type="button" class="sub" id="clearBtn">会話の文脈（履歴）をリセット</button>
   <div class="status" id="status">待機中...</div>
-  <div class="chat-log" id="chatLog"><div style="color:#666;text-align:center;font-size:13px">ここにリアルタイム通訳の履歴が表示されます</div></div>
+  <div class="live-box" id="liveText">🗣️ ここに認識中の言葉がリアルタイム表示されます...</div>
+  <div class="chat-log" id="chatLog"><div style="color:#666;text-align:center;font-size:13px">ここに通訳履歴が表示されます</div></div>
 </div>
 <script>
 let rec=null,run=false,spk=false,hist=[];
@@ -71,22 +73,30 @@ function start(){
 }
 function initRec(){
   if(!run)return;
-  const st=document.getElementById("status"),SR=window.SpeechRecognition||window.webkitSpeechRecognition,dir=document.getElementById("direction").value;
+  const st=document.getElementById("status"),live=document.getElementById("liveText"),SR=window.SpeechRecognition||window.webkitSpeechRecognition,dir=document.getElementById("direction").value;
   try{
-    rec=new SR();rec.lang=dir==="ja-to-en"?"ja-JP":"en-US";rec.continuous=false;rec.interimResults=false;
+    rec=new SR();rec.lang=dir==="ja-to-en"?"ja-JP":"en-US";rec.continuous=true;rec.interimResults=true;
     rec.onstart=()=>{if(!spk)st.innerText="🎙️ 聞き取り中... 話してください";};
     rec.onresult=async(e)=>{
-      const txt=e.results[e.results.length-1].transcript.trim();
-      if(!txt)return;
-      st.innerText="🤖 AIが文脈とトーンを解析中...";
-      const res=await trans(txt,dir);
-      if(res){logMsg(txt,res.translation,res.tone);speak(res.translation,dir==="ja-to-en"?"en-US":"ja-JP",res.rate,res.pitch);}
+      let interim="",finalTxt="";
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        if(e.results[i].isFinal)finalTxt+=e.results[i].transcript;
+        else interim+=e.results[i].transcript;
+      }
+      if(interim)live.innerText="🗣️ 聞き取り中: "+interim;
+      if(finalTxt.trim()){
+        const txt=finalTxt.trim();
+        live.innerText="✅ 確定: "+txt;
+        st.innerText="🤖 AIが文脈とトーンを解析中...";
+        const res=await trans(txt,dir);
+        if(res){logMsg(txt,res.translation,res.tone);speak(res.translation,dir==="ja-to-en"?"en-US":"ja-JP",res.rate,res.pitch);}
+      }
     };
     rec.onerror=(e)=>{
-      if(e.error==="not-allowed"){st.innerText="⚠️ マイクが許可されていません";stop();}
+      if(e.error==="not-allowed"||e.error==="service-not-allowed"){st.innerText="⚠️ マイクまたは音声入力が許可されていません";stop();}
       else if(e.error!=="no-speech"&&e.error!=="aborted"){st.innerText="⚠️ 音声エラー: "+e.error;}
     };
-    rec.onend=()=>{if(run)setTimeout(()=>{if(run)try{rec.start();}catch(e){}},200);};
+    rec.onend=()=>{if(run)setTimeout(()=>{if(run)try{rec.start();}catch(e){}},250);};
     rec.start();
   }catch(e){st.innerText="⚠️ 起動エラー: "+e.message;stop();}
 }
