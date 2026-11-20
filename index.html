@@ -14,7 +14,7 @@
   button { background: #0a84ff; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 12px; transition: 0.2s; }
   button.stop { background: #ff453a; }
   button.sub { background: #3a3a3c; font-size: 13px; padding: 8px; margin-top: 6px; }
-  .status { font-size: 13px; color: #30d158; text-align: center; margin: 10px 0; font-weight: bold; }
+  .status { font-size: 13px; color: #30d158; text-align: center; margin: 10px 0; font-weight: bold; word-break: break-all; }
   .chat-log { background: #161616; padding: 12px; border-radius: 10px; height: 220px; overflow-y: auto; border: 1px solid #2c2c2c; margin-top: 10px; }
   .msg { margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2a2a2a; }
   .orig { font-size: 13px; color: #aaa; }
@@ -56,7 +56,6 @@
   let isSpeaking = false;
   let conversationHistory = [];
 
-  // 設定の読み込み
   window.onload = () => {
     if (localStorage.getItem("gemini_api_key")) {
       document.getElementById("apiKey").value = localStorage.getItem("gemini_api_key");
@@ -65,7 +64,7 @@
       document.getElementById("direction").value = localStorage.getItem("gemini_direction");
     }
     if (localStorage.getItem("gemini_context")) {
-      document.getElementById("contextPrompt").value = localStorage.getElementById("gemini_context");
+      document.getElementById("contextPrompt").value = localStorage.getItem("gemini_context");
     }
   };
 
@@ -96,12 +95,13 @@
       alert("先にGemini APIキーを入力してください。");
       return;
     }
+    saveSettings();
+
     if (!SpeechRecognition) {
       alert("お使いのブラウザは音声認識に対応していません。iPhoneのSafariで開いてください。");
       return;
     }
 
-    // iOS Safari対策：最初のボタンタップ時に無音を再生して音声合成エンジンをロック解除する
     const unlockUtterance = new SpeechSynthesisUtterance("");
     window.speechSynthesis.speak(unlockUtterance);
 
@@ -116,7 +116,7 @@
     const direction = document.getElementById("direction").value;
     recognition = new SpeechRecognition();
     recognition.lang = direction === "ja-to-en" ? "ja-JP" : "en-US";
-    recognition.continuous = false; // iOS Safariで安定させるため1文ごとに区切って自動再起動する
+    recognition.continuous = false;
     recognition.interimResults = false;
 
     recognition.onstart = () => {
@@ -126,7 +126,8 @@
     };
 
     recognition.onresult = async (event) => {
-      const transcript = event.results[0][0].transcript.trim();
+      const lastIndex = event.results.length - 1;
+      const transcript = event.results[lastIndex][0].transcript.trim();
       if (!transcript) return;
 
       document.getElementById("status").innerText = "🤖 AIが文脈とトーンを解析・翻訳中...";
@@ -145,7 +146,6 @@
     };
 
     recognition.onend = () => {
-      // 停止ボタンが押されていなければ即座に次の聞き取りを再開
       if (isRunning) {
         setTimeout(() => {
           try { recognition.start(); } catch (e) {}
@@ -172,7 +172,6 @@
     const customContext = document.getElementById("contextPrompt").value.trim();
     const targetLang = direction === "ja-to-en" ? "英語" : "日本語";
 
-    // 直近6往復の履歴をテキスト化
     const historyText = conversationHistory.slice(-6).map(h => `発言: ${h.orig} -> 訳: ${h.trans}`).join("\n");
 
     const systemInstruction = `あなたは超一流の同時通訳者です。以下のルールを厳守してください。
@@ -184,7 +183,7 @@
 
     const userMessage = `【直近の会話履歴】\n${historyText || "なし"}\n\n【今回の発言】\n${text}`;
 
-    const url = `https://googleapis.com{apiKey}`;
+    const url = `https://googleapis.com{encodeURIComponent(apiKey)}`;
 
     try {
       const response = await fetch(url, {
@@ -196,15 +195,23 @@
           generationConfig: { responseMimeType: "application/json" }
         })
       });
-      const data = await response.json();
-      const rawText = data.candidates[0].content.parts[0].text;
-      const parsed = JSON.parse(rawText);
 
-      // 履歴に追加
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errMsg = data.error ? data.error.message : "HTTP " + response.status;
+        document.getElementById("status").innerText = "⚠️ Google APIエラー: " + errMsg;
+        return null;
+      }
+
+      const rawText = data.candidates[0].content.parts[0].text;
+      const cleanedText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+      const parsed = JSON.parse(cleanedText);
+
       conversationHistory.push({ orig: text, trans: parsed.translation });
       return parsed;
     } catch (error) {
-      document.getElementById("status").innerText = "⚠️ 翻訳APIエラー（通信またはキーを確認）";
+      document.getElementById("status").innerText = "⚠️ 処理エラー: " + error.message;
       return null;
     }
   }
@@ -243,8 +250,3 @@
   }
 
   function escapeHtml(str) {
-    return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-  }
-</script>
-</body>
-</html>
