@@ -10,13 +10,13 @@ body{font-family:-apple-system,sans-serif;margin:0;padding:15px;background:#1212
 h2{margin-top:0;font-size:20px;text-align:center;color:#4da3ff}
 label{font-size:12px;color:#aaa;display:block;margin-top:10px}
 input,select,textarea,button{width:100%;padding:12px;margin:6px 0;border-radius:10px;border:1px solid #333;background:#2c2c2c;color:#fff;font-size:16px;box-sizing:border-box}
-textarea{height:65px;font-size:14px}
-button{background:#0a84ff;border:none;font-weight:bold;cursor:pointer;margin-top:12px;-webkit-appearance:none}
+textarea{height:60px;font-size:14px}
+button{background:#0a84ff;border:none;font-weight:bold;cursor:pointer;margin-top:10px;-webkit-appearance:none}
 button.stop{background:#ff453a}
-button.sub{background:#3a3a3c;font-size:13px;padding:8px;margin-top:6px}
+button.sub{background:#3a3a3c;font-size:13px;padding:9px;margin-top:6px}
 .status{font-size:13px;color:#30d158;text-align:center;margin:10px 0;font-weight:bold;word-break:break-all;min-height:20px}
 .live-box{background:#252528;padding:10px;border-radius:8px;font-size:14px;color:#ffd60a;min-height:22px;margin-bottom:8px;border:1px dashed #444}
-.chat-log{background:#161616;padding:12px;border-radius:10px;height:210px;overflow-y:auto;border:1px solid #2c2c2c}
+.chat-log{background:#161616;padding:12px;border-radius:10px;height:200px;overflow-y:auto;border:1px solid #2c2c2c}
 .msg{margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #2a2a2a}
 .orig{font-size:13px;color:#aaa}
 .trans{font-size:16px;color:#fff;font-weight:bold;margin-top:4px}
@@ -38,6 +38,7 @@ button.sub{background:#3a3a3c;font-size:13px;padding:8px;margin-top:6px}
   <label>前提知識・専門用語・スラング・キャラ設定</label>
   <textarea id="contextPrompt" oninput="save()">カジュアルな日常会話・SNS・ゲーム・ビジネス現場の最新スラングや略語（ngl, fr, bet, 草, ヤバい等）のニュアンスを汲み取り、話し手のテンションに合わせた自然な口語で訳してください。</textarea>
   <button type="button" id="toggleBtn">通訳スタート（マイクON）</button>
+  <button type="button" class="sub" id="testBtn">🔊 音声なしで翻訳テスト（「聞こえますか」を送信）</button>
   <button type="button" class="sub" id="clearBtn">会話の文脈（履歴）をリセット</button>
   <div class="status" id="status">待機中...</div>
   <div class="live-box" id="liveText">🗣️ ここに認識中の言葉が表示されます...</div>
@@ -51,6 +52,12 @@ document.addEventListener("DOMContentLoaded",()=>{
   if(localStorage.getItem("g_ctx"))document.getElementById("contextPrompt").value=localStorage.getItem("g_ctx");
   document.getElementById("toggleBtn").addEventListener("click",toggle);
   document.getElementById("clearBtn").addEventListener("click",()=>{hist=[];document.getElementById("chatLog").innerHTML="";});
+  document.getElementById("testBtn").addEventListener("click",async()=>{
+    const dir=document.getElementById("direction").value;
+    document.getElementById("status").innerText="🤖 テスト翻訳中...";
+    const res=await trans("聞こえますか",dir);
+    if(res){logMsg("聞こえますか",res.translation,res.tone);speak(res.translation,dir==="ja-to-en"?"en-US":"ja-JP",res.rate,res.pitch);}
+  });
 });
 function save(){
   localStorage.setItem("g_key",document.getElementById("apiKey").value.trim());
@@ -75,8 +82,12 @@ function initRec(){
   if(!run||busy)return;
   const st=document.getElementById("status"),live=document.getElementById("liveText"),SR=window.SpeechRecognition||window.webkitSpeechRecognition,dir=document.getElementById("direction").value;
   try{
-    if(rec){try{rec.onend=null;rec.abort();}catch(e){}rec=null;}
-    rec=new SR();rec.lang=dir==="ja-to-en"?"ja-JP":"en-US";rec.continuous=false;rec.interimResults=true;
+    if(!rec){
+      rec=new SR();
+      rec.continuous=true;
+      rec.interimResults=true;
+    }
+    rec.lang=dir==="ja-to-en"?"ja-JP":"en-US";
     rec.onstart=()=>{if(!spk&&!busy)st.innerText="🎙️ 聞き取り中... 話してください";};
     rec.onresult=(e)=>{
       let interim="",finalTxt="";
@@ -89,58 +100,65 @@ function initRec(){
       if(interim)live.innerText="🗣️ 聞き取り中: "+interim;
       if(finalTxt.trim()&&!busy){
         busy=true;
-        try{rec.onend=null;rec.stop();}catch(err){}
         const txt=finalTxt.trim();
         live.innerText="✅ 確定: "+txt;
         st.innerText="🤖 AIが翻訳中...";
-        setTimeout(async()=>{
-          const res=await trans(txt,dir);
+        trans(txt,dir).then(res=>{
           busy=false;
           if(res){
             logMsg(txt,res.translation,res.tone);
             speak(res.translation,dir==="ja-to-en"?"en-US":"ja-JP",res.rate,res.pitch);
           }
-          if(run)setTimeout(initRec,400);
-        },500);
+        });
       }
     };
     rec.onerror=(e)=>{
       if(e.error==="not-allowed"||e.error==="service-not-allowed"){st.innerText="⚠️ マイクが許可されていません";stop();}
       else if(e.error!=="no-speech"&&e.error!=="aborted"){st.innerText="⚠️ 音声エラー: "+e.error;}
     };
-    rec.onend=()=>{if(run&&!busy)setTimeout(initRec,350);};
+    rec.onend=()=>{if(run)setTimeout(()=>{try{rec.start();}catch(e){}},300);};
     rec.start();
-  }catch(e){if(run&&!busy)setTimeout(initRec,500);}
+  }catch(e){}
 }
 function stop(){
   run=false;busy=false;
   try{if(window.speechSynthesis)window.speechSynthesis.cancel();}catch(e){}
-  try{if(rec){rec.onend=null;rec.abort();rec=null;}}catch(e){}
+  try{if(rec){rec.onend=null;rec.stop();rec=null;}}catch(e){}
   const btn=document.getElementById("toggleBtn");
   btn.innerText="通訳スタート（マイクON）";btn.classList.remove("stop");
   document.getElementById("status").innerText="停止中";
 }
-async function trans(text,dir){
-  const rawKey=document.getElementById("apiKey").value;
-  const key=rawKey.replace(/[^a-zA-Z0-9_-]/g,"");
-  const ctx=document.getElementById("contextPrompt").value.trim(),lang=dir==="ja-to-en"?"英語":"日本語",st=document.getElementById("status");
-  const hTxt=hist.slice(-6).map(h=>"発言:"+h.o+" -> 訳:"+h.t).join("\n");
-  const sys="超一流の同時通訳者として以下を厳守。\n1.前提・専門用語・スラング設定:"+ctx+"\n2.直前の文脈を踏まえ、スラングや若者言葉もネイティブが同じテンションで使う自然な"+lang+"に訳す。\n3.感情やテンションから速度(rate:0.8〜1.3)と声の高さ(pitch:0.8〜1.3)を決める。\n4.必ずJSONのみ出力: {\"translation\":\"訳文\",\"tone\":\"感情説明\",\"rate\":1.0,\"pitch\":1.0}";
-  const msg="【履歴】\n"+(hTxt||"なし")+"\n【今回】\n"+text;
-  try{
-    const r=await fetch("https://googleapis.com",{
-      method:"POST",
-      referrerPolicy:"no-referrer",
-      headers:{"Content-Type":"application/json","x-goog-api-key":key},
-      body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{parts:[{text:msg}]}],generationConfig:{responseMimeType:"application/json"}})
-    });
-    const d=await r.json();
-    if(!r.ok){st.innerText="⚠️ APIエラー: "+(d.error?d.error.message:r.status);return null;}
-    const raw=d.candidates.at(0).content.parts.at(0).text;
-    const p=JSON.parse(raw.replace(/[\x60]/g,"").replace(/^json/i,"").trim());
-    hist.push({o:text,t:p.translation});
-    return p;
-  }catch(e){st.innerText="⚠️ 通信詳細: "+e.name+" / "+e.message;return null;}
+function trans(text,dir){
+  return new Promise(resolve=>{
+    const rawKey=document.getElementById("apiKey").value;
+    const key=rawKey.replace(/[^a-zA-Z0-9_-]/g,"");
+    const ctx=document.getElementById("contextPrompt").value.trim(),lang=dir==="ja-to-en"?"英語":"日本語",st=document.getElementById("status");
+    if(!key){st.innerText="⚠️ APIキーが空です";resolve(null);return;}
+    const hTxt=hist.slice(-6).map(h=>"発言:"+h.o+" -> 訳:"+h.t).join("\n");
+    const sys="超一流の同時通訳者として以下を厳守。\n1.前提・専門用語・スラング設定:"+ctx+"\n2.直前の文脈を踏まえ、スラングや若者言葉もネイティブが同じテンションで使う自然な"+lang+"に訳す。\n3.感情やテンションから速度(rate:0.8〜1.3)と声の高さ(pitch:0.8〜1.3)を決める。\n4.必ずJSONのみ出力: {\"translation\":\"訳文\",\"tone\":\"感情説明\",\"rate\":1.0,\"pitch\":1.0}";
+    const msg="【履歴】\n"+(hTxt||"なし")+"\n【今回】\n"+text;
+    const xhr=new XMLHttpRequest();
+    xhr.open("POST","https://googleapis.com"+key,true);
+    xhr.setRequestHeader("Content-Type","application/json");
+    xhr.onreadystatechange=function(){
+      if(xhr.readyState===4){
+        if(xhr.status>=200&&xhr.status<300){
+          try{
+            const d=JSON.parse(xhr.responseText);
+            const raw=d.candidates.at(0).content.parts.at(0).text;
+            const p=JSON.parse(raw.replace(/[\x60]/g,"").replace(/^json/i,"").trim());
+            hist.push({o:text,t:p.translation});
+            resolve(p);
+          }catch(err){st.innerText="⚠️ 解析エラー: "+err.message;resolve(null);}
+        }else{
+          st.innerText="⚠️ 通信エラー("+xhr.status+"): "+xhr.responseText.slice(0,80);
+          resolve(null);
+        }
+      }
+    };
+    xhr.onerror=function(){st.innerText="⚠️ XHR通信失敗(ネットワーク/ブロック)";resolve(null);};
+    xhr.send(JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{parts:[{text:msg}]}],generationConfig:{responseMimeType:"application/json"}}));
+  });
 }
 function speak(t,l,r,p){
   if(!window.speechSynthesis)return;
