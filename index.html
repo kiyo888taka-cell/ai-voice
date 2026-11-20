@@ -77,8 +77,9 @@ const MODEL="gemini-3.1-flash-lite";
 const API_URL="https://generativelanguage.googleapis.com/v1beta/models/"+MODEL+":generateContent?key=";
 const $=id=>document.getElementById(id);
 const MAP={apiKey:"g_key",direction:"g_dir",scene:"g_scene",contextPrompt:"g_topic",gloss:"g_gloss",rate:"g_rate",fontSize:"g_fs",stable:"g_st"};
-let rec=null,run=false,hist=[],chain=Promise.resolve(),queued=0,sentLen=0,latestFull="",timer=null,wake=null;
+let rec=null,run=false,hist=[],chain=Promise.resolve(),sentLen=0,latestFull="",timer=null,wake=null;
 const setSt=m=>{$("status").innerText=m;};
+let spQ=[],spBusy=false,spTok=0,spTimer=null,recRunning=false,recStarting=0,lastStart=0,fails=0,perm=0,restartT=null,wd=null;
 window.onerror=m=>setSt("⚠️ JSエラー: "+m);
 
 function load(){
@@ -124,15 +125,15 @@ function start(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){setSt("⚠️ Safariで開いてください");return;}
   save();unlock();getWake();
-  run=true;$("toggleBtn").innerText="通訳を停止する";$("toggleBtn").classList.add("stop");
+  run=true;startWatchdog();$("toggleBtn").innerText="通訳を停止する";$("toggleBtn").classList.add("stop");
   setSt("⏳ マイク起動中...");startRec();
 }
 function stop(){
-  run=false;clearTimeout(timer);
+  run=false;clearTimeout(timer);clearInterval(wd);clearTimeout(restartT);restartT=null;
   try{speechSynthesis.cancel();}catch(e){}
-  try{if(rec){rec.onend=null;rec.onresult=null;rec.stop();rec=null;}}catch(e){}
+  try{if(rec){rec.onend=null;rec.onresult=null;rec.onerror=null;rec.onstart=null;rec.abort();rec=null;}}catch(e){}
   try{if(wake){wake.release();wake=null;}}catch(e){}
-  queued=0;
+  spQ=[];spBusy=false;spTok++;clearTimeout(spTimer);recRunning=false;recStarting=0;
   $("toggleBtn").innerText="通訳スタート（マイクON）";$("toggleBtn").classList.remove("stop");
   setSt("停止中");
 }
@@ -153,15 +154,31 @@ function flush(force){
   $("liveText").innerText="✅ 確定: "+t;enqueue(t,false);
 }
 
+function scheduleRestart(d){
+  if(!run||restartT)return;
+  restartT=setTimeout(()=>{restartT=null;startRec();},d);
+}
+function startWatchdog(){
+  clearInterval(wd);
+  wd=setInterval(()=>{
+    if(!run)return;
+    const stuck=recStarting&&Date.now()-recStarting>=5000;
+    if(stuck){setSt("🔄 マイク再接続中...");startRec();}
+    else if(!recRunning&&!restartT&&!recStarting)scheduleRestart(200);
+  },2000);
+}
 function startRec(){
   if(!run)return;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(rec){rec.onend=null;rec.onresult=null;rec.onerror=null;}
-  rec=new SR();rec.continuous=true;rec.interimResults=true;rec.lang=inLang();
-  sentLen=0;latestFull="";
+  if(rec){rec.onend=null;rec.onresult=null;rec.onerror=null;rec.onstart=null;try{rec.abort();}catch(e){}}
+  const me=rec=new SR();
+  me.continuous=true;me.interimResults=true;me.lang=inLang();
+  sentLen=0;latestFull="";recRunning=false;recStarting=Date.now();lastStart=Date.now();
   const sep=inLang()==="ja-JP"?"":" ",maxLen=inLang()==="ja-JP"?40:90;
-  rec.onstart=()=>setSt("🎙️ 聞き取り中... 話してください");
-  rec.onresult=e=>{
+  me.onstart=()=>{if(rec!==me)return;recRunning=true;recStarting=0;if(!spBusy)setSt("🎙️ 聞き取り中... 話してください");};
+  me.onresult=e=>{
+    if(rec!==me)return;
+    perm=0;
     let full="";
     for(let i=0;i<e.results.length;i++)full+=(i?sep:"")+e.results[i][0].transcript;
     if(sentLen>full.length)sentLen=0;
@@ -172,12 +189,22 @@ function startRec(){
     if(e.results[e.results.length-1].isFinal){flush();}
     else if(pend){const big=pend.length>maxLen;timer=setTimeout(()=>flush(big),big?200:+$("stable").value);}
   };
-  rec.onerror=e=>{
-    if(e.error==="not-allowed"||e.error==="service-not-allowed"){setSt("⚠️ マイクが許可されていません");stop();}
-    else if(e.error!=="no-speech"&&e.error!=="aborted")setSt("⚠️ 音声エラー: "+e.error+"（自動再開します）");
+  me.onerror=e=>{
+    if(rec!==me)return;
+    if(e.error==="not-allowed"||e.error==="service-not-allowed"){
+      perm++;
+      if(perm>=4){setSt("⚠️ マイクが許可されていません（設定を確認）");stop();}
+      else setSt("🔄 マイク再接続中...("+perm+")");
+    }else if(e.error!=="no-speech"&&e.error!=="aborted")setSt("⚠️ 音声エラー: "+e.error+"（自動再開）");
   };
-  rec.onend=()=>{flush(true);if(run)setTimeout(startRec,250);};
-  try{rec.start();}catch(e){setTimeout(startRec,500);}
+  me.onend=()=>{
+    if(rec!==me)return;
+    flush(true);recRunning=false;recStarting=0;
+    const quick=Date.now()-lastStart<1500;
+    fails=quick?fails+1:0;
+    scheduleRestart(Math.min(250+fails*400,3000));
+  };
+  try{me.start();}catch(e){recStarting=0;scheduleRestart(600);}
 }
 
 function enqueue(text,test){
@@ -223,17 +250,44 @@ async function trans(text,dir){
 
 function speak(t){
   if(!window.speechSynthesis)return;
+  spQ.push(t);
+  while(spQ.length>4)spQ.shift();
+  if(!spBusy)playNext();
+}
+function playNext(retried){
+  clearTimeout(spTimer);
+  if(!spQ.length){
+    spBusy=false;
+    if(run){setSt("🎙️ 聞き取り中... 話してください");if(!recRunning)scheduleRestart(100);}
+    return;
+  }
+  spBusy=true;
+  const t=spQ.shift(),tok=++spTok;
   const u=new SpeechSynthesisUtterance(t);
   u.lang=outLang();
   const v=pickVoice();if(v)u.voice=v;
-  const base=+$("rate").value;
-  const boost=queued>=3?1.3:queued>=2?1.15:1;
-  u.rate=Math.min(Math.max(base*boost,0.6),1.8);
-  queued++;
-  u.onstart=()=>setSt("🔊 訳音声を再生中"+(queued>1?"（待ち"+(queued-1)+"）":""));
-  const done=()=>{queued=Math.max(0,queued-1);if(run&&queued===0)setSt("🎙️ 聞き取り中... 話してください");};
+  const n=spQ.length,boost=n>=3?1.3:n>=2?1.15:1;
+  u.rate=Math.min(Math.max(+$("rate").value*boost,0.6),1.8);
+  let fin=false,started=false;
+  const done=()=>{
+    if(fin||tok!==spTok)return;
+    fin=true;clearTimeout(spTimer);
+    if(run&&!recRunning)scheduleRestart(100);
+    playNext();
+  };
+  const maxMs=4000+t.length*(outLang()==="ja-JP"?300:120)/u.rate;
+  const stuck=()=>{
+    if(fin)return;
+    try{speechSynthesis.cancel();}catch(e){}
+    if(!started&&!retried){fin=true;spQ.unshift(t);setTimeout(()=>playNext(true),100);}
+    else done();
+  };
+  u.onstart=()=>{started=true;clearTimeout(spTimer);spTimer=setTimeout(stuck,maxMs);setSt("🔊 訳音声を再生中"+(spQ.length?"（待ち"+spQ.length+"）":""));};
   u.onend=done;u.onerror=done;
-  speechSynthesis.speak(u);
+  spTimer=setTimeout(stuck,2500);
+  try{speechSynthesis.resume();}catch(e){}
+  const go=()=>{try{speechSynthesis.speak(u);}catch(e){done();}};
+  if(speechSynthesis.speaking||speechSynthesis.pending){speechSynthesis.cancel();setTimeout(go,80);}else go();
 }
 
 function logMsg(o,t){
