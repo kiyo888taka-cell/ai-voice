@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>AIライブ字幕</title>
 <style>
-:root{--fs:34px}
+:root{--fs:24px}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:#000;color:#fff;font-family:-apple-system,sans-serif;overflow:hidden}
 #app{height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
@@ -14,12 +14,14 @@ html,body{height:100%;margin:0;background:#000;color:#fff;font-family:-apple-sys
 #bar button.stop{background:#ff453a}
 #bar button.sm{background:#2c2c2e;padding:8px 10px;font-size:14px}
 #spk{display:flex;gap:6px}
-.dot{width:26px;height:26px;border-radius:50%;border:3px solid transparent;padding:0!important;min-width:0}
+.dot{width:34px;height:34px;border-radius:50%;border:3px solid transparent;padding:0!important;min-width:0;font-size:16px;color:#000}
 .dot.on{border-color:#fff;box-shadow:0 0 0 2px #555}
 #status{flex:1;font-size:11px;color:#30d158;line-height:1.2;min-width:0;word-break:break-all}
-#subs{flex:1;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;padding:8px 16px;min-height:0}
-.sub{font-size:var(--fs);font-weight:700;line-height:1.35;margin-top:8px;text-shadow:0 1px 3px #000}
-.sub:nth-last-child(2){opacity:.65}.sub:nth-last-child(3){opacity:.4}.sub:nth-last-child(n+4){opacity:.25}
+#subs{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 16px;min-height:0}
+.seg{border-bottom:1px solid #2a2a2a;padding:8px 0}
+.seg .o{font-size:max(12px,calc(var(--fs)*.5));color:#8a8a8e;line-height:1.3}
+.seg .t{font-size:var(--fs);font-weight:700;line-height:1.4;margin-top:3px}
+#jump{display:none;position:fixed;right:14px;bottom:34px;background:#0a84ff;color:#fff;border:0;border-radius:20px;padding:8px 14px;font-size:14px;font-weight:bold;z-index:5}
 #src{flex:none;font-size:12px;color:#777;padding:4px 16px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:22px}
 .ov{display:none;position:fixed;inset:0;background:#111;overflow-y:auto;padding:calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 16px) 20px calc(env(safe-area-inset-left) + 16px);z-index:10}
 .ov.show{display:block}
@@ -38,7 +40,6 @@ html,body{height:100%;margin:0;background:#000;color:#fff;font-family:-apple-sys
     <button id="toggleBtn">▶ 開始</button>
     <div id="spk"></div>
     <div id="status">待機中</div>
-    <button class="sm" id="histBtn">履歴</button>
     <button class="sm" id="setBtn">⚙️</button>
   </div>
   <div id="subs"></div>
@@ -50,7 +51,7 @@ html,body{height:100%;margin:0;background:#000;color:#fff;font-family:-apple-sys
   <input type="password" id="apiKey" placeholder="キーを貼り付け">
   <div class="row">
     <div><label>通訳の方向</label><select id="direction"><option value="en-to-ja">🇺🇸 英語 ➔ 🇯🇵 日本語</option><option value="ja-to-en">🇯🇵 日本語 ➔ 🇺🇸 英語</option></select></div>
-    <div><label>字幕の文字サイズ</label><select id="fontSize"><option value="24">小</option><option value="30">中</option><option value="36">大</option><option value="46">特大</option></select></div>
+    <div><label>字幕の文字サイズ</label><select id="fontSize"><option value="18">小</option><option value="24">中</option><option value="30">大</option><option value="38">特大</option></select></div>
   </div>
   <div class="row">
     <div><label>コンテンツの種類</label><select id="scene"><option value="vlog">Vlog・YouTube</option><option value="game">ゲーム実況・配信</option><option value="talk">ポッドキャスト・対談</option><option value="chat">友人同士の雑談</option><option value="news">ニュース・解説</option></select></div>
@@ -65,25 +66,22 @@ html,body{height:100%;margin:0;background:#000;color:#fff;font-family:-apple-sys
   <button id="closeSet">閉じる</button>
 </div>
 
-<div class="ov" id="histPanel">
-  <div id="histList"></div>
-  <button id="closeHist">閉じる</button>
-</div>
+<button id="jump">↓ 最新へ</button>
 
 <script>
 const MODEL="gemini-3.1-flash-lite";
 const BASE="https://generativelanguage.googleapis.com/v1beta/models/"+MODEL+":streamGenerateContent?alt=sse&key=";
-const COL=["#ffffff","#ffd60a","#64d2ff","#30d158","#ff7ab8"];
+const SP=[{c:"#ffffff",l:""},{c:"#64d2ff",l:"♂"},{c:"#ff7ab8",l:"♀"},{c:"#ffd60a",l:"★"}];
 const $=id=>document.getElementById(id);
-const MAP={apiKey:"g_key",direction:"g_dir2",contextPrompt:"g_topic",gloss:"g_gloss",scene:"g_scene",fontSize:"g_fs3",stable:"g_st"};
-let rec=null,run=false,hist=[],log=[],chain=Promise.resolve(),sentLen=0,latestFull="",timer=null,wake=null;
-let recRunning=false,recStarting=0,lastStart=0,fails=0,perm=0,restartT=null,wd=null,curSpk=0;
+const MAP={apiKey:"g_key",direction:"g_dir2",contextPrompt:"g_topic",gloss:"g_gloss",scene:"g_scene",fontSize:"g_fs4",stable:"g_st"};
+let rec=null,run=false,hist=[],chain=Promise.resolve(),sentLen=0,latestFull="",timer=null,wake=null;
+let recRunning=false,recStarting=0,lastStart=0,fails=0,perm=0,restartT=null,wd=null,curSpk=0,pendSince=0;
 const setSt=m=>{$("status").innerText=m;};
 window.onerror=m=>setSt("⚠️ JSエラー: "+m);
 
 function load(){
   for(const id in MAP){const v=localStorage.getItem(MAP[id]);if(v!==null)$(id).value=v;}
-  if(!localStorage.getItem("g_fs3"))$("fontSize").value="36";
+  if(!localStorage.getItem("g_fs4"))$("fontSize").value="24";
   applyFs();
 }
 function save(){for(const id in MAP)localStorage.setItem(MAP[id],$(id).value);}
@@ -92,8 +90,8 @@ const inLang=()=>$("direction").value==="ja-to-en"?"ja-JP":"en-US";
 
 document.addEventListener("DOMContentLoaded",()=>{
   load();
-  COL.forEach((c,i)=>{
-    const b=document.createElement("button");b.className="dot"+(i===0?" on":"");b.style.background=c;b.dataset.s=i;
+  SP.forEach((sp,i)=>{
+    const b=document.createElement("button");b.className="dot"+(i===0?" on":"");b.style.background=sp.c;b.textContent=sp.l;b.dataset.s=i;
     b.addEventListener("click",()=>{curSpk=i;document.querySelectorAll(".dot").forEach(d=>d.classList.toggle("on",+d.dataset.s===i));});
     $("spk").appendChild(b);
   });
@@ -102,25 +100,15 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("toggleBtn").addEventListener("click",()=>run?stop():start());
   $("setBtn").addEventListener("click",()=>$("panel").classList.add("show"));
   $("closeSet").addEventListener("click",()=>$("panel").classList.remove("show"));
-  $("histBtn").addEventListener("click",showHist);
-  $("closeHist").addEventListener("click",()=>$("histPanel").classList.remove("show"));
-  $("clearBtn").addEventListener("click",()=>{hist=[];log=[];$("subs").innerHTML="";});
+  $("subs").addEventListener("scroll",()=>{$("jump").style.display=nearBottom()?"none":"block";});
+  $("jump").addEventListener("click",()=>{$("subs").scrollTop=$("subs").scrollHeight;});
+  $("clearBtn").addEventListener("click",()=>{hist=[];$("subs").innerHTML="";});
   $("testBtn").addEventListener("click",()=>{$("panel").classList.remove("show");enqueue("Are you ready?");});
   document.addEventListener("visibilitychange",()=>{if(run&&document.visibilityState==="visible")getWake();});
   if(!$("apiKey").value)$("panel").classList.add("show");
 });
 
-function showHist(){
-  const L=$("histList");L.innerHTML="";
-  log.slice(-100).reverse().forEach(x=>{
-    const d=document.createElement("div");d.className="h";
-    const o=document.createElement("div");o.className="o";o.textContent=x.o;
-    const t=document.createElement("div");t.className="t";t.style.color=COL[x.s];t.textContent=x.t;
-    d.appendChild(o);d.appendChild(t);L.appendChild(d);
-  });
-  if(!log.length)L.textContent="履歴はまだありません";
-  $("histPanel").classList.add("show");
-}
+const nearBottom=()=>{const b=$("subs");return b.scrollHeight-b.scrollTop-b.clientHeight<80;};
 async function getWake(){try{if(navigator.wakeLock)wake=await navigator.wakeLock.request("screen");}catch(e){}}
 
 function start(){
@@ -153,8 +141,18 @@ function flush(force){
   if(!t)return;
   const maxLen=inLang()==="ja-JP"?40:90;
   if(force!==true&&incomplete(t)&&t.length<maxLen){timer=setTimeout(()=>flush(true),1200);return;}
-  sentLen=latestFull.length;
+  sentLen=latestFull.length;pendSince=0;
   $("src").innerText="✅ "+t;enqueue(t);
+}
+function cutFlush(){
+  clearTimeout(timer);
+  const raw=latestFull.slice(sentLen),lead=raw.length-raw.replace(/^\s+/,"").length,pend=raw.trim();
+  let cut=pend.length;
+  if(inLang()!=="ja-JP"){const sp=pend.lastIndexOf(" ");if(sp>15)cut=sp;}
+  const head=pend.slice(0,cut).trim();
+  if(!head)return;
+  sentLen+=lead+cut;pendSince=Date.now();
+  $("src").innerText="✅ "+head;enqueue(head);
 }
 
 function scheduleRestart(d){
@@ -175,8 +173,8 @@ function startRec(){
   if(rec){rec.onend=null;rec.onresult=null;rec.onerror=null;rec.onstart=null;try{rec.abort();}catch(e){}}
   const me=rec=new SR();
   me.continuous=true;me.interimResults=true;me.lang=inLang();
-  sentLen=0;latestFull="";recRunning=false;recStarting=Date.now();lastStart=Date.now();
-  const sep=inLang()==="ja-JP"?"":" ",maxLen=inLang()==="ja-JP"?40:90;
+  sentLen=0;pendSince=0;latestFull="";recRunning=false;recStarting=Date.now();lastStart=Date.now();
+  const sep=inLang()==="ja-JP"?"":" ";
   me.onstart=()=>{if(rec!==me)return;recRunning=true;recStarting=0;setSt("🎙️ 聞き取り中");};
   me.onresult=e=>{
     if(rec!==me)return;
@@ -187,9 +185,12 @@ function startRec(){
     latestFull=full;
     const pend=full.slice(sentLen).trim();
     $("src").innerText="🗣️ "+pend;
+    if(!pend){pendSince=0;return;}
+    if(!pendSince)pendSince=Date.now();
     clearTimeout(timer);
-    if(e.results[e.results.length-1].isFinal){flush();}
-    else if(pend){const big=pend.length>maxLen;timer=setTimeout(()=>flush(big),big?200:+$("stable").value);}
+    if(e.results[e.results.length-1].isFinal){flush();return;}
+    if(pend.length>(inLang()==="ja-JP"?28:70)||Date.now()-pendSince>2800){cutFlush();return;}
+    timer=setTimeout(()=>flush(),+$("stable").value);
   };
   me.onerror=e=>{
     if(rec!==me)return;
@@ -218,24 +219,28 @@ function enqueue(text){
   chain=chain.then(()=>runSeg(text,s)).catch(()=>{});
 }
 async function runSeg(text,s){
-  const el=document.createElement("div");el.className="sub";el.style.color=COL[s];el.textContent="…";
-  const box=$("subs");box.appendChild(el);
-  while(box.children.length>6)box.removeChild(box.firstChild);
-  const t=await trans(text,$("direction").value,out=>{el.textContent=out;});
-  if(!t){el.remove();return;}
-  el.textContent=t;
-  hist.push({o:text,t:t});if(hist.length>30)hist.shift();
-  log.push({o:text,t:t,s:s});if(log.length>300)log.shift();
+  const box=$("subs"),near=nearBottom();
+  const d=document.createElement("div");d.className="seg";
+  const o=document.createElement("div");o.className="o";o.textContent=text;
+  const t=document.createElement("div");t.className="t";t.style.color=SP[s].c;t.textContent="…";
+  d.appendChild(o);d.appendChild(t);box.appendChild(d);
+  while(box.children.length>150)box.removeChild(box.firstChild);
+  if(near)box.scrollTop=box.scrollHeight;
+  const res=await trans(text,$("direction").value,out=>{const n=nearBottom();t.textContent=out;if(n)box.scrollTop=box.scrollHeight;},s);
+  if(!res){d.remove();return;}
+  t.textContent=res;
+  hist.push({o:text,t:res});if(hist.length>30)hist.shift();
 }
 
-async function trans(text,dir,onDelta){
+const SPH=["性別不明（文脈から推定。確信が持てなければ一人称を避け中立に訳す）","男性（一人称・語尾を男性らしく。俺・僕など）","女性（一人称・語尾を女性らしく。私・あたし等。「俺」は使わない）","複数人・その他（中立的に）"];
+async function trans(text,dir,onDelta,spk){
   const key=encodeURIComponent($("apiKey").value.replace(/\s+/g,""));
   const ej=dir==="en-to-ja";
   const rules=ej
     ?"あなたは同時通訳者。英語の発話を、字幕として一目で読める自然な話し言葉の日本語に訳し、訳文のみ出力する。\n規則:\n1.言いよどみ(um, uh, like, you know)や言い直しは省く。\n2.字幕向けに簡潔に。長い文は短く区切り、日本語として自然な語順にする。\n3.音声認識の誤変換は文脈と用語集から補正する。\n4.入力は文の途中で切れていることがある。直前の訳の続きとして自然につなぎ、訳済みの部分は繰り返さない。\n5.スラング・略語・ネットミームは直訳せず、日本語話者が同じテンションで使う表現(ガチで、エグい、ヤバい等)に置き換える。不明なら文脈から推測する。\n6.罵倒や下品な表現も弱めすぎず、話者の強さに合わせる。\n"+SLANG
     :"You are a subtitle interpreter. Translate the Japanese speech into concise, natural spoken English as a native would say it, with the same energy. Output the translation only. Drop fillers, fix likely speech-recognition errors from context, treat input as possibly cut mid-sentence (continue naturally from the previous translation, never repeat it), and render Japanese slang with equivalent English slang.\n";
   const topic=$("contextPrompt").value.trim(),gl=$("gloss").value.trim();
-  const sys=rules+"\n場面: "+(SCENE[$("scene").value]||"")+(topic?"\n話題・登場人物: "+topic:"")+(gl?"\n用語集(必ず従う):\n"+gl:"");
+  const sys=rules+"\n場面: "+(SCENE[$("scene").value]||"")+(topic?"\n話題・登場人物: "+topic:"")+(gl?"\n用語集(必ず従う):\n"+gl:"")+"\n現在の話者: "+SPH[spk||0];
   const h=hist.slice(-6).map(x=>x.o+" => "+x.t).join("\n");
   const msg=(h?"【直前の文脈】\n"+h+"\n":"")+"【訳す文】\n"+text;
   const body=JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{parts:[{text:msg}]}],generationConfig:{temperature:0.3,maxOutputTokens:400}});
