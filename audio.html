@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>AIライブ字幕（音声直送）</title>
+<style>
+:root{--fs:24px}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:#000;color:#fff;font-family:-apple-system,sans-serif;overflow:hidden}
+#app{height:100dvh;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+#bar{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#111;flex:none}
+#bar button{width:auto;margin:0;padding:8px 14px;border:0;border-radius:10px;background:#0a84ff;color:#fff;font-size:15px;font-weight:bold}
+#bar button.stop{background:#ff453a}
+#bar button.sm{background:#2c2c2e;padding:8px 10px;font-size:14px}
+#lv{width:56px;height:8px;background:#2c2c2e;border-radius:4px;overflow:hidden;flex:none}
+#lvl{height:100%;width:0;background:#30d158}
+#status{flex:1;font-size:11px;color:#30d158;line-height:1.2;min-width:0;word-break:break-all}
+#subs{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 16px;min-height:0}
+.seg{border-bottom:1px solid #2a2a2a;padding:8px 0}
+.seg .o{font-size:max(12px,calc(var(--fs)*.5));color:#8a8a8e;line-height:1.3}
+.seg .t{font-size:var(--fs);font-weight:700;line-height:1.4;margin-top:3px}
+#jump{display:none;position:fixed;right:14px;bottom:34px;background:#0a84ff;color:#fff;border:0;border-radius:20px;padding:8px 14px;font-size:14px;font-weight:bold;z-index:5}
+#src{flex:none;font-size:12px;color:#777;padding:4px 16px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:22px}
+.ov{display:none;position:fixed;inset:0;background:#111;overflow-y:auto;padding:calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 16px) 20px calc(env(safe-area-inset-left) + 16px);z-index:10}
+.ov.show{display:block}
+.ov label{font-size:12px;color:#aaa;display:block;margin-top:10px}
+.ov input,.ov select,.ov textarea,.ov button{width:100%;padding:10px;margin:4px 0;border-radius:10px;border:1px solid #333;background:#2c2c2c;color:#fff;font-size:16px}
+.ov textarea{height:60px;font-size:13px}
+.ov button{background:#0a84ff;border:0;font-weight:bold;margin-top:10px}
+.ov button.sub2{background:#3a3a3c;font-size:13px}
+.row{display:flex;gap:8px}.row>div{flex:1}
+.note{font-size:12px;color:#aaa;margin-top:8px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="bar">
+    <button id="toggleBtn">▶ 開始</button>
+    <div id="lv"><div id="lvl"></div></div>
+    <div id="status">待機中</div>
+    <button class="sm" id="setBtn">⚙️</button>
+  </div>
+  <div id="subs"></div>
+  <div id="src">音声を区切ってAIに直接送ります（男性=水色 / 女性=ピンク / 不明=白）</div>
+</div>
+
+<div class="ov" id="panel">
+  <label>Gemini APIキー（自動保存）</label>
+  <input type="password" id="apiKey" placeholder="キーを貼り付け">
+  <label>マイク入力（イヤホンのマイクを避けたい時に選択）</label>
+  <select id="mic"><option value="">自動</option></select>
+  <div class="row">
+    <div><label>通訳の方向</label><select id="direction"><option value="en-to-ja">🇺🇸 英語 ➔ 🇯🇵 日本語</option><option value="ja-to-en">🇯🇵 日本語 ➔ 🇺🇸 英語</option></select></div>
+    <div><label>字幕の文字サイズ</label><select id="fontSize"><option value="18">小</option><option value="24">中</option><option value="30">大</option><option value="38">特大</option></select></div>
+  </div>
+  <div class="row">
+    <div><label>コンテンツの種類</label><select id="scene"><option value="vlog">Vlog・YouTube</option><option value="game">ゲーム実況・配信</option><option value="talk">ポッドキャスト・対談</option><option value="chat">友人同士の雑談</option><option value="news">ニュース・解説</option></select></div>
+    <div><label>区切りの無音時間</label><select id="sil"><option value="350">短い(速い会話)</option><option value="550">標準</option><option value="900">長い</option></select></div>
+  </div>
+  <label>話題・登場人物メモ</label>
+  <textarea id="contextPrompt" placeholder="誰が何について話しているか"></textarea>
+  <label>用語集（1行ずつ「原語=訳」）</label>
+  <textarea id="gloss" placeholder="GG=ナイスゲーム"></textarea>
+  <div class="note">音声を数秒ごとに区切ってGeminiへ送ります。区切りの無音を待つぶん、文字認識版より字幕はやや遅れます。</div>
+  <button class="sub2" id="clearBtn">履歴・文脈をリセット</button>
+  <button id="closeSet">閉じる</button>
+</div>
+
+<script>
+const MODEL="gemini-3.1-flash-lite";
+const URLS="https://generativelanguage.googleapis.com/v1beta/models/"+MODEL+":streamGenerateContent?alt=sse&key=";
+const GC={M:"#64d2ff",F:"#ff7ab8",U:"#ffffff"};
+const $=id=>document.getElementById(id);
+const MAP={apiKey:"g_key",direction:"g_dir2",contextPrompt:"g_topic",gloss:"g_gloss",scene:"g_scene",fontSize:"g_fs4",sil:"g_sil"};
+let ac=null,stream=null,proc=null,srcNode=null,run=false,opening=false,hist=[],chain=Promise.resolve(),wake=null,wd=null;
+let inSp=false,buf=[],pre=[],silMs=0,spMs=0,nf=0.005,sr=48000;
+const setSt=m=>{$("status").innerText=m;};
+const setSrc=m=>{$("src").innerText=m;};
+window.onerror=m=>setSt("⚠️ JSエラー: "+m);
+const nearBottom=()=>{const b=$("subs");return b.scrollHeight-b.scrollTop-b.clientHeight<80;};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function load(){
+  for(const id in MAP){const v=localStorage.getItem(MAP[id]);if(v!==null)$(id).value=v;}
+  if(!localStorage.getItem("g_fs4"))$("fontSize").value="24";
+  applyFs();
+}
+function save(){for(const id in MAP)localStorage.setItem(MAP[id],$(id).value);}
+function applyFs(){document.documentElement.style.setProperty("--fs",$("fontSize").value+"px");}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  load();
+  for(const id in MAP)$(id).addEventListener("change",()=>{save();if(id==="fontSize")applyFs();});
+  ["apiKey","contextPrompt","gloss"].forEach(id=>$(id).addEventListener("input",save));
+  $("toggleBtn").addEventListener("click",()=>run?stop():start());
+  $("setBtn").addEventListener("click",()=>$("panel").classList.add("show"));
+  $("closeSet").addEventListener("click",()=>$("panel").classList.remove("show"));
+  $("clearBtn").addEventListener("click",()=>{hist=[];$("subs").innerHTML="";});
+  $("subs").addEventListener("scroll",()=>{$("jump").style.display=nearBottom()?"none":"block";});
+  $("jump").addEventListener("click",()=>{$("subs").scrollTop=$("subs").scrollHeight;});
+  $("mic").addEventListener("change",async()=>{if(run){closeCapture();await openCapture();}});
+  document.addEventListener("visibilitychange",()=>{if(run&&document.visibilityState==="visible")getWake();});
+  if(!$("apiKey").value)$("panel").classList.add("show");
+});
+async function getWake(){try{if(navigator.wakeLock)wake=await navigator.wakeLock.request("screen");}catch(e){}}
+
+async function listMics(){
+  try{
+    const cur=$("mic").value,ds=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==="audioinput");
+    $("mic").innerHTML='<option value="">自動</option>'+ds.map(d=>'<option value="'+d.deviceId+'">'+(d.label||"マイク")+"</option>").join("");
+    $("mic").value=cur;
+  }catch(e){}
+}
+
+async function openCapture(){
+  if(opening)return;opening=true;
+  try{
+    const a={echoCancellation:false,noiseSuppression:false,autoGainControl:true};
+    if($("mic").value)a.deviceId={exact:$("mic").value};
+    stream=await navigator.mediaDevices.getUserMedia({audio:a});
+    ac=new (window.AudioContext||window.webkitAudioContext)();
+    await ac.resume();sr=ac.sampleRate;
+    srcNode=ac.createMediaStreamSource(stream);
+    proc=ac.createScriptProcessor(4096,1,1);
+    const g=ac.createGain();g.gain.value=0;
+    srcNode.connect(proc);proc.connect(g);g.connect(ac.destination);
+    proc.onaudioprocess=onAudio;
+    inSp=false;buf=[];pre=[];silMs=0;spMs=0;
+    setSt("🎙️ 聞き取り中");
+    listMics();
+  }catch(e){
+    setSt("⚠️ マイクを開けません: "+(e.name||e.message));
+    if(e.name==="NotAllowedError"){run=false;$("toggleBtn").innerText="▶ 開始";$("toggleBtn").classList.remove("stop");}
+  }
+  opening=false;
+}
+function closeCapture(){
+  try{if(proc){proc.onaudioprocess=null;proc.disconnect();}}catch(e){}
+  try{if(srcNode)srcNode.disconnect();}catch(e){}
+  try{if(stream)stream.getTracks().forEach(t=>t.stop());}catch(e){}
+  try{if(ac)ac.close();}catch(e){}
+  proc=null;srcNode=null;stream=null;ac=null;
+}
+
+async function start(){
+  if(!$("apiKey").value.trim()){$("panel").classList.add("show");setSt("⚠️ APIキーを入力してください");return;}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){setSt("⚠️ このブラウザは録音に非対応です");return;}
+  save();getWake();
+  run=true;$("toggleBtn").innerText="■ 停止";$("toggleBtn").classList.add("stop");
+  setSt("⏳ マイク起動中...");
+  await openCapture();
+  clearInterval(wd);
+  wd=setInterval(()=>{
+    if(!run||opening)return;
+    const tr=stream&&stream.getAudioTracks()[0];
+    if(!tr||tr.readyState!=="live"){setSt("🔄 マイク再接続中...");closeCapture();openCapture();}
+    else if(ac&&ac.state!=="running"){try{ac.resume();}catch(e){}}
+  },2000);
+}
+function stop(){
+  run=false;clearInterval(wd);closeCapture();
+  try{if(wake){wake.release();wake=null;}}catch(e){}
+  inSp=false;buf=[];pre=[];$("lvl").style.width="0";
+  $("toggleBtn").innerText="▶ 開始";$("toggleBtn").classList.remove("stop");
+  setSt("停止中");
+}
+
+function onAudio(e){
+  if(!run)return;
+  const c=new Float32Array(e.inputBuffer.getChannelData(0));
+  let sum=0;for(let i=0;i<c.length;i++)sum+=c[i]*c[i];
+  const rms=Math.sqrt(sum/c.length),ms=c.length/sr*1000;
+  $("lvl").style.width=Math.min(100,rms*500)+"%";
+  const voiced=rms>Math.max(0.012,nf*3);
+  if(!inSp){
+    nf=nf*0.97+rms*0.03;
+    pre.push(c);if(pre.length>4)pre.shift();
+    if(voiced){inSp=true;buf=pre.slice();pre=[];silMs=0;spMs=ms;setSrc("⏺ 発話を録音中...");}
+  }else{
+    buf.push(c);spMs+=ms;
+    if(voiced)silMs=0;else silMs+=ms;
+    if(silMs>=+$("sil").value){
+      if(spMs-silMs>400)finish();else{inSp=false;buf=[];}
+    }else if(spMs>7000)finish();
+  }
+}
+function finish(){
+  const chunks=buf;buf=[];inSp=false;silMs=0;spMs=0;pre=[];
+  setSrc("⏳ AIに送信中...");
+  const box=$("subs"),near=nearBottom();
+  const d=document.createElement("div");d.className="seg";
+  const o=document.createElement("div");o.className="o";o.textContent="…";
+  const t=document.createElement("div");t.className="t";t.textContent="…";
+  d.appendChild(o);d.appendChild(t);box.appendChild(d);
+  while(box.children.length>150)box.removeChild(box.firstChild);
+  if(near)box.scrollTop=box.scrollHeight;
+  const wav=toWav(chunks,sr);
+  chain=chain.then(()=>runSeg(d,o,t,wav)).catch(()=>{});
+}
+
+async function toWav(chunks,inRate){
+  let n=0;chunks.forEach(c=>n+=c.length);
+  const all=new Float32Array(n);let off=0;chunks.forEach(c=>{all.set(c,off);off+=c.length;});
+  let pk=0;for(let i=0;i<n;i++){const a=Math.abs(all[i]);if(a>pk)pk=a;}
+  const gain=pk<0.5?Math.min(6,0.9/Math.max(pk,0.01)):1;
+  const r=inRate/16000,m=Math.floor(n/r),pcm=new Int16Array(m);
+  for(let i=0;i<m;i++){
+    const p=i*r,i0=Math.floor(p),f=p-i0,a=all[i0],b=all[i0+1]===undefined?a:all[i0+1];
+    let v=(a+(b-a)*f)*gain;v=Math.max(-1,Math.min(1,v));pcm[i]=v<0?v*32768:v*32767;
+  }
+  const h=new DataView(new ArrayBuffer(44));
+  const w=(o,s)=>{for(let i=0;i<s.length;i++)h.setUint8(o+i,s.charCodeAt(i));};
+  w(0,"RIFF");h.setUint32(4,36+m*2,true);w(8,"WAVE");w(12,"fmt ");h.setUint32(16,16,true);h.setUint16(20,1,true);h.setUint16(22,1,true);h.setUint32(24,16000,true);h.setUint32(28,32000,true);h.setUint16(32,2,true);h.setUint16(34,16,true);w(36,"data");h.setUint32(40,m*2,true);
+  const blob=new Blob([h.buffer,pcm.buffer],{type:"audio/wav"});
+  return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result.split(",")[1]);fr.onerror=rej;fr.readAsDataURL(blob);});
+}
+
+const SCENE={game:"ゲーム実況・配信。テンション高め、ゲーム用語が多い。",vlog:"VlogやYouTubeの一人語り。カジュアル。",talk:"ポッドキャストや対談。話者が入れ替わる。",chat:"友人同士の砕けた雑談。",news:"ニュース・解説。丁寧で正確な語調。"};
+const SLANG="スラング目安: ngl=正直/fr=マジで/bet=了解・いいね/no cap=ガチで/lowkey=ちょっと・内心/highkey=めっちゃ/cooked=終わった/mid=微妙/sus=怪しい/rizz=モテ力/goated=神/based=筋が通ってて最高/bruh=おいおい/deadass=マジで/slay=最高・決まってる/ate=完璧だった/W・L=勝ち・負け/salty=ふてくされ/tilted=イライラ/fire=ヤバくて良い/vibe=雰囲気/ghost=音信不通/cringe=痛い。";
+
+function buildSys(){
+  const ej=$("direction").value==="en-to-ja";
+  const fmt=ej
+    ?"出力は必ず次の1行形式のみ:\n性別||英語の聞き取り原文||日本語訳\n"
+    :"出力は必ず次の1行形式のみ:\n性別||日本語の聞き取り原文||English translation\n";
+  const base="あなたは同時通訳者。渡された音声"+(ej?"(英語)を聞き取り、字幕として一目で読める自然な話し言葉の日本語に訳す":"(日本語)を聞き取り、ネイティブが同じテンションで言う自然な英語に訳す")+"。\n"+fmt+
+   "性別は声の高さ・声質から判断し M(男性) / F(女性) / U(判断不能・複数人) の1文字。\n人の明瞭な発話が無い(無音・BGM・効果音のみ)場合は NONE とだけ出力する。\n規則:\n1.言いよどみや言い直しは省く。\n2.字幕向けに簡潔に訳す。\n3.聞き取りの曖昧な箇所は文脈・用語集から補正する。\n4.音声は文の途中で始まったり切れたりすることがある。直前の訳の続きとして自然につなぎ、訳済みの部分は繰り返さない。\n5."+(ej?"スラング・略語・ネットミームは直訳せず、日本語話者が同じテンションで使う表現(ガチで、エグい、ヤバい等)に置き換える。不明なら文脈から推測する。\n6.罵倒や下品な表現も弱めすぎず、話者の強さに合わせる。\n7.話者の性別に合わせて一人称・語尾を選ぶ(男性:俺/僕、女性:私/あたし。女性に「俺」は使わない)。判断不能なら一人称を避ける。\n"+SLANG:"スラングは英語の同等表現に置き換える。\n");
+  const topic=$("contextPrompt").value.trim(),gl=$("gloss").value.trim();
+  return base+"\n場面: "+(SCENE[$("scene").value]||"")+(topic?"\n話題・登場人物: "+topic:"")+(gl?"\n用語集(必ず従う):\n"+gl:"");
+}
+
+function parse(out){
+  if(out.indexOf("||")<0)return{g:"U",o:"",t:out.length<4?"":out.trim()};
+  const a=out.split("||"),g=((a[0].trim()[0])||"U").toUpperCase();
+  return{g:"MFU".indexOf(g)>=0?g:"U",o:(a[1]||"").trim(),t:(a[2]||"").trim()};
+}
+function render(out,o,t){
+  const box=$("subs"),n=nearBottom();
+  if(!/^\s*NONE/i.test(out)){
+    const p=parse(out);
+    if(p.o)o.textContent=p.o;
+    t.textContent=p.t||"…";t.style.color=GC[p.g];
+  }
+  if(n)box.scrollTop=box.scrollHeight;
+}
+
+async function runSeg(d,o,t,wavP){
+  let b64;try{b64=await wavP;}catch(e){d.remove();return;}
+  const res=await callGemini(b64,out=>render(out,o,t));
+  if(!res||/^\s*NONE/i.test(res)){d.remove();setSrc(res?"（発話なしと判定）":"");return;}
+  render(res,o,t);
+  const p=parse(res);
+  hist.push({o:p.o,t:p.t});if(hist.length>30)hist.shift();
+  setSrc("");
+}
+
+async function callGemini(b64,onDelta){
+  const key=encodeURIComponent($("apiKey").value.replace(/\s+/g,""));
+  const h=hist.slice(-5).map(x=>x.o+" => "+x.t).join("\n");
+  const msg=(h?"【直前の文脈】\n"+h+"\n":"")+"【この音声を通訳】";
+  const body=JSON.stringify({systemInstruction:{parts:[{text:buildSys()}]},contents:[{parts:[{text:msg},{inlineData:{mimeType:"audio/wav",data:b64}}]}],generationConfig:{temperature:0.2,maxOutputTokens:500}});
+  for(let n=0;n<3;n++){
+    const ac2=new AbortController(),to=setTimeout(()=>ac2.abort(),25000);
+    try{
+      const r=await fetch(URLS+key,{method:"POST",headers:{"Content-Type":"application/json"},body:body,signal:ac2.signal});
+      if(!r.ok){
+        clearTimeout(to);
+        if(r.status===429||r.status>=500){setSt("⏳ 混雑中。再試行("+r.status+")");await sleep(800*(n+1));continue;}
+        const tx=await r.text();setSt("⚠️ 通信エラー("+r.status+"): "+tx.slice(0,100));return null;
+      }
+      let out="",bf="";
+      const feed=chunk=>{
+        bf+=chunk;let i;
+        while((i=bf.indexOf("\n"))>=0){
+          const line=bf.slice(0,i).trim();bf=bf.slice(i+1);
+          if(line.indexOf("data:")===0){
+            try{
+              const j=JSON.parse(line.slice(5));
+              const ps=(j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[];
+              const tx=ps.map(p=>p.text||"").join("");
+              if(tx){out+=tx;onDelta(out);}
+            }catch(e){}
+          }
+        }
+      };
+      if(r.body&&r.body.getReader){
+        const rd=r.body.getReader(),dec=new TextDecoder();
+        for(;;){const x=await rd.read();if(x.done)break;feed(dec.decode(x.value,{stream:true}));}
+        feed("\n");
+      }else{feed((await r.text())+"\n");}
+      clearTimeout(to);
+      if(run)setSt("🎙️ 聞き取り中");
+      return out.trim()||null;
+    }catch(err){clearTimeout(to);setSt("⚠️ 通信失敗。再試行中...");await sleep(600);}
+  }
+  return null;
+}
+</script>
+</body>
+</html>
