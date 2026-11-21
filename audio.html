@@ -45,6 +45,8 @@ html,body{height:100%;margin:0;background:#000;color:#fff;font-family:-apple-sys
   <div id="src">音声を区切ってAIに直接送ります（男性=水色 / 女性=ピンク / 不明=白）</div>
 </div>
 
+<button id="jump">↓ 最新へ</button>
+
 <div class="ov" id="panel">
   <label>Gemini APIキー（自動保存）</label>
   <input type="password" id="apiKey" placeholder="キーを貼り付け">
@@ -53,6 +55,9 @@ html,body{height:100%;margin:0;background:#000;color:#fff;font-family:-apple-sys
   <div class="row">
     <div><label>通訳の方向</label><select id="direction"><option value="en-to-ja">🇺🇸 英語 ➔ 🇯🇵 日本語</option><option value="ja-to-en">🇯🇵 日本語 ➔ 🇺🇸 英語</option></select></div>
     <div><label>字幕の文字サイズ</label><select id="fontSize"><option value="18">小</option><option value="24">中</option><option value="30">大</option><option value="38">特大</option></select></div>
+  </div>
+  <div class="row">
+    <div><label>マイク感度（小声が拾えない時は高感度）</label><select id="sens"><option value="0.004">高感度</option><option value="0.008">標準</option><option value="0.015">低感度（雑音が多い時）</option></select></div>
   </div>
   <div class="row">
     <div><label>コンテンツの種類</label><select id="scene"><option value="vlog">Vlog・YouTube</option><option value="game">ゲーム実況・配信</option><option value="talk">ポッドキャスト・対談</option><option value="chat">友人同士の雑談</option><option value="news">ニュース・解説</option></select></div>
@@ -72,7 +77,7 @@ const MODEL="gemini-3.1-flash-lite";
 const URLS="https://generativelanguage.googleapis.com/v1beta/models/"+MODEL+":streamGenerateContent?alt=sse&key=";
 const GC={M:"#64d2ff",F:"#ff7ab8",U:"#ffffff"};
 const $=id=>document.getElementById(id);
-const MAP={apiKey:"g_key",direction:"g_dir2",contextPrompt:"g_topic",gloss:"g_gloss",scene:"g_scene",fontSize:"g_fs4",sil:"g_sil"};
+const MAP={apiKey:"g_key",direction:"g_dir2",contextPrompt:"g_topic",gloss:"g_gloss",scene:"g_scene",fontSize:"g_fs4",sil:"g_sil",sens:"g_sens"};
 let ac=null,stream=null,proc=null,srcNode=null,run=false,opening=false,hist=[],chain=Promise.resolve(),wake=null,wd=null;
 let inSp=false,buf=[],pre=[],silMs=0,spMs=0,nf=0.005,sr=48000;
 const setSt=m=>{$("status").innerText=m;};
@@ -84,6 +89,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function load(){
   for(const id in MAP){const v=localStorage.getItem(MAP[id]);if(v!==null)$(id).value=v;}
   if(!localStorage.getItem("g_fs4"))$("fontSize").value="24";
+  if(!localStorage.getItem("g_sens"))$("sens").value="0.004";
   applyFs();
 }
 function save(){for(const id in MAP)localStorage.setItem(MAP[id],$(id).value);}
@@ -172,7 +178,7 @@ function onAudio(e){
   let sum=0;for(let i=0;i<c.length;i++)sum+=c[i]*c[i];
   const rms=Math.sqrt(sum/c.length),ms=c.length/sr*1000;
   $("lvl").style.width=Math.min(100,rms*500)+"%";
-  const voiced=rms>Math.max(0.012,nf*3);
+  const voiced=rms>Math.max(+$("sens").value,nf*2.5);
   if(!inSp){
     nf=nf*0.97+rms*0.03;
     pre.push(c);if(pre.length>4)pre.shift();
@@ -182,7 +188,7 @@ function onAudio(e){
     if(voiced)silMs=0;else silMs+=ms;
     if(silMs>=+$("sil").value){
       if(spMs-silMs>400)finish();else{inSp=false;buf=[];}
-    }else if(spMs>7000)finish();
+    }else if((spMs>6000&&silMs>=150)||spMs>10000)finish();
   }
 }
 function finish(){
@@ -196,14 +202,21 @@ function finish(){
   while(box.children.length>150)box.removeChild(box.firstChild);
   if(near)box.scrollTop=box.scrollHeight;
   const wav=toWav(chunks,sr);
-  chain=chain.then(()=>runSeg(d,o,t,wav)).catch(()=>{});
+  Q.push([d,o,t,wav]);pump();
+}
+let active=0;const Q=[];
+function pump(){
+  while(active<2&&Q.length){
+    const j=Q.shift();active++;
+    runSeg(j[0],j[1],j[2],j[3]).catch(()=>{}).finally(()=>{active--;pump();});
+  }
 }
 
 async function toWav(chunks,inRate){
   let n=0;chunks.forEach(c=>n+=c.length);
   const all=new Float32Array(n);let off=0;chunks.forEach(c=>{all.set(c,off);off+=c.length;});
   let pk=0;for(let i=0;i<n;i++){const a=Math.abs(all[i]);if(a>pk)pk=a;}
-  const gain=pk<0.5?Math.min(6,0.9/Math.max(pk,0.01)):1;
+  const gain=pk<0.7?Math.min(10,0.9/Math.max(pk,0.01)):1;
   const r=inRate/16000,m=Math.floor(n/r),pcm=new Int16Array(m);
   for(let i=0;i<m;i++){
     const p=i*r,i0=Math.floor(p),f=p-i0,a=all[i0],b=all[i0+1]===undefined?a:all[i0+1];
@@ -248,7 +261,8 @@ function render(out,o,t){
 async function runSeg(d,o,t,wavP){
   let b64;try{b64=await wavP;}catch(e){d.remove();return;}
   const res=await callGemini(b64,out=>render(out,o,t));
-  if(!res||/^\s*NONE/i.test(res)){d.remove();setSrc(res?"（発話なしと判定）":"");return;}
+  if(!res){t.textContent="（通信エラーで訳せませんでした）";t.style.color="#8a8a8e";return;}
+  if(/^\s*NONE/i.test(res)){d.remove();setSrc("（発話なしと判定）");return;}
   render(res,o,t);
   const p=parse(res);
   hist.push({o:p.o,t:p.t});if(hist.length>30)hist.shift();
