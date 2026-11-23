@@ -1,0 +1,1829 @@
+[
+  {
+    "en": "Vice City - Two Years Ago",
+    "ja": "バイスシティ 2年前",
+    "speaker": "Narrator",
+    "gender": "u",
+    "color": "#ffffff"
+  },
+  {
+    "en": "Okay.",
+    "ja": "よし…",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Oh, fuck!",
+    "ja": "クソ！",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "What you doing with my mother's car, huh?",
+    "ja": "ママの車に 何してんの？",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Hey, you're a psycho, you know that?",
+    "ja": "お前イカれてるな",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Fuck you.",
+    "ja": "黙れ",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Hey! Hey! Hold it right there. Ah, shit.",
+    "ja": "おい待て そこを動くな ヤバい",
+    "speaker": "Cop",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Do not move! Idiot.",
+    "ja": "動くな バカ",
+    "speaker": "Cop",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "It's your fault.",
+    "ja": "お前のせいだ",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Listen, bro. It's your lucky day.",
+    "ja": "あんた今日はツイてるね",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Oh, really? How so?",
+    "ja": "何でだ？",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "It's actually not my car. I actually stole it.",
+    "ja": "本当は盗んだの",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "You stole it? Thought you said this was your mom's car?",
+    "ja": "ママの車って言ってたぞ",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "I stole it for my mother. Wow.",
+    "ja": "ママのために盗んだの",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Relax, homie. You're in no position to say \"wow\" to anybody.",
+    "ja": "はっ？ 人を責められる立場なの？",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Just follow my lead and we'll be outta this shit, okay?",
+    "ja": "抜け出したいなら言うとおりにして",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Wow. Shut up.",
+    "ja": "すごいな 黙って",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "You okay, miss?",
+    "ja": "大丈夫か？",
+    "speaker": "Cop",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Do you know this guy?",
+    "ja": "この男は知り合いか？",
+    "speaker": "Cop",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Yeah, he's my boyfriend.",
+    "ja": "うん…彼氏よ",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "It's a new car.",
+    "ja": "新車なの",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "We were fighting over who was gonna drive.",
+    "ja": "どっちが運転するかで喧嘩になって",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Really? We gotta run these plates.",
+    "ja": "本当か？ ナンバーを確認するぞ",
+    "speaker": "Cop",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Yeah, he wanted to drive,",
+    "ja": "彼が運転したがって",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "but he drives like a bitch, so. What?",
+    "ja": "へタクソのくせに だから… 何だと？",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Worse than my abuela. And she has cataracts. That's enough.",
+    "ja": "私のおばあちゃんよりへタ もういい",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Oh, yeah? Well, you're pretty",
+    "ja": "お前も相当",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "mean! And also crazy.",
+    "ja": "イカれてる！",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Don't you call me crazy, bro.",
+    "ja": "イカれてるだろ いい加減にしないか",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Why? Crazy? I said that's enough.",
+    "ja": "もう一回言ってみな",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "One more time, man.",
+    "ja": "わかった言い過ぎだった",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Okay, alright. Yeah, just messing around.",
+    "ja": "イカれてる",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "She's fuckin' crazy, though.",
+    "ja": "殺してやる！",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "You good over there?",
+    "ja": "大丈夫？",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Yeah, I'm good.",
+    "ja": "ああ",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Wanna get out of here?",
+    "ja": "ここを離れようか",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Yep.",
+    "ja": "だな",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "I'm driving.",
+    "ja": "運転する",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Okay.",
+    "ja": "ああ",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Okay, in here. Pull",
+    "ja": "ここで停めろ",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Now kill the engine, get down.",
+    "ja": "エンジンを切って伏せろ",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "They coming? Hang tight.",
+    "ja": "来てる？ 待ってろ",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "You really stole this for your mom?",
+    "ja": "本当にお母さんのために？",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "She's tryin' to become a real estate broker.",
+    "ja": "ママは 不動産ブローカーを目指してるの",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "You wanna win in that game, you gotta look the part.",
+    "ja": "業界で勝つには見栄えも大事でしょ",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Yeah, well, maybe change the plates before you give it to her.",
+    "ja": "そうだな渡す前に ナンバーは変えろよ",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Thanks for the tip.",
+    "ja": "アドバイスありがと",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Okay, think we're good.",
+    "ja": "よしもう大丈夫だ",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I'm gonna get outta your hair so you can",
+    "ja": "邪魔はしないから",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Go to bed?",
+    "ja": "帰って寝ろよ",
+    "speaker": "Stranger",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Bed? You fuckin' kidding me?",
+    "ja": "寝る？ ふざけてんの？",
+    "speaker": "Stranger",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "I'm Jason.",
+    "ja": "ジェイソンだ",
+    "speaker": "Jason",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Lucia.",
+    "ja": "ルシアよ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Let's go have some fun.",
+    "ja": "楽しくやろう",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I still can't believe I shacked up with a car thief.",
+    "ja": "車泥棒と付き合ってるなんてな",
+    "speaker": "Jason",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Successful car thief, and that wasn't even for me.",
+    "ja": "腕はいいし自分のために盗んだわけじゃない",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "And, excuse me, but you're a hell of a lot worse.",
+    "ja": "それに 悪いけど あんたのほうがよっぽどひどいよ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I know what you're up to with those guys.",
+    "ja": "あの連中のこと知ってるわ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "What guys?",
+    "ja": "どの連中だ？",
+    "speaker": "Jason",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "The guys that picked you up the other day.",
+    "ja": "この前あんたを拾った奴ら",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "You come back all keyed up, with a roll of bills.",
+    "ja": "興奮状態で 札束握って帰ってきた",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "That's just easy money.",
+    "ja": "楽な稼ぎだ",
+    "speaker": "Jason",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "I need money. Why don't you take me?",
+    "ja": "私もお金が欲しい 連れてってよ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I can handle a gun.",
+    "ja": "銃なら使える",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Lu, this life's not for you. It's not for anybody. Right.",
+    "ja": "ルシア お前はこの暮らしに向いてない 向いてる奴はいないんだ",
+    "speaker": "Jason",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "I'll take you to a nice dinner.",
+    "ja": "俺がいい店に連れて行く",
+    "speaker": "Jason",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "We'll go shopping.",
+    "ja": "買い物にもな",
+    "speaker": "Jason",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Then we can take the time to make a plan that's not fuckin' stupid.",
+    "ja": "きちんと計画を立てるのもいいと思う",
+    "speaker": "Jason",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "This is bullshit.",
+    "ja": "ふざけないで",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I'll just go out on my own.",
+    "ja": "私一人でもできる",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "No, you won't.",
+    "ja": "ダメだ",
+    "speaker": "Jason",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Says fuckin' who?",
+    "ja": "どの口が言うわけ？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Prison Recording: This is a free call from:",
+    "ja": "刑務所録音：無料通話です 発信元は",
+    "speaker": "Prison Recording",
+    "gender": "u",
+    "color": "#ffffff"
+  },
+  {
+    "en": "Lucia Caminos",
+    "ja": "ルシア・カミノス",
+    "speaker": "Prison Recording",
+    "gender": "u",
+    "color": "#ffffff"
+  },
+  {
+    "en": "Prison Recording: An inmate at:",
+    "ja": "刑務所録音：収容施設は",
+    "speaker": "Prison Recording",
+    "gender": "u",
+    "color": "#ffffff"
+  },
+  {
+    "en": "Prison Recording: The Hamlet Correctional Facility.",
+    "ja": "刑務所録音：ハムレット矯正施設",
+    "speaker": "Prison Recording",
+    "gender": "u",
+    "color": "#ffffff"
+  },
+  {
+    "en": "Hello.",
+    "ja": "もしもし？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Lucia, is that really you?",
+    "ja": "ルシアなのか？",
+    "speaker": "Jason",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "In Spanish: Bro, I'm telling you, this place is the shit.",
+    "ja": "（スペイン語）ここは最高だ",
+    "speaker": "Customer",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "I don't know why we fuck with any place else.",
+    "ja": "他にあり得ないだろ？",
+    "speaker": "Customer",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Yo, I'm here for it, ready. Show it to me, let me see, bro.",
+    "ja": "わかったよ 楽しみだな",
+    "speaker": "Customer",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Shit.",
+    "ja": "もう…",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "In Spanish: One coffee, please.",
+    "ja": "（スペイン語）コーヒーを1つ",
+    "speaker": "Customer",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "In Spanish: Make it two and the menu.",
+    "ja": "（スペイン語）メニューも頼む",
+    "speaker": "Customer",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Could I have another ice water, please?",
+    "ja": "水をもう一杯お願い",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Another one? You don't want a leche caliente or something?",
+    "ja": "また？ ホットミルクとかは？",
+    "speaker": "Waitress",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Just water.",
+    "ja": "水でいい",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I don't like to do this, but my boss told me to ask you to settle up.",
+    "ja": "悪いけど 上から言われてて… 席を空けてほしいの",
+    "speaker": "Waitress",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "He doesn't mind you taking the table, but you know.",
+    "ja": "何か注文するなら話は別だけど…",
+    "speaker": "Waitress",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I get it. It's no problem.",
+    "ja": "わかった すぐ出る",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Lu, you staring at that window again?",
+    "ja": "ルシア また窓を見てるの？",
+    "speaker": "Yolanda",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Mm-hmm.",
+    "ja": "うん…",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "You can look out there all day, girl.",
+    "ja": "一日中見てても",
+    "speaker": "Yolanda",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Ain't nothin' gonna change.",
+    "ja": "何も変わらないでしょ",
+    "speaker": "Yolanda",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Uhh, sorry about that.",
+    "ja": "ごめんなさいね",
+    "speaker": "Antonia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "They're late.",
+    "ja": "遅すぎ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Yeah? Damn.",
+    "ja": "そうね ほんと",
+    "speaker": "Antonia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Anything good in there?",
+    "ja": "まだやってるの？ 手伝おうか？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Yeah, like seven things my dumbass lawyer missed out.",
+    "ja": "弁護士の見落としが7つも",
+    "speaker": "Zoey",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Figures.",
+    "ja": "やっぱりね",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Public defenders can kiss my ass.",
+    "ja": "国選弁護人なんてクソ",
+    "speaker": "Zoey",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Oh, you still doin' that?",
+    "ja": "まだやってるの？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Clue is \"planet of love\".",
+    "ja": "ヒントは「愛の惑星」 だけど地球じゃない",
+    "speaker": "Yolanda",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Ain't this planet, that's for damn sure.",
+    "ja": "この星じゃないのは確か",
+    "speaker": "Yolanda",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "How 'bout Venus?",
+    "ja": "金星はどう？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Yo, that- that looks right. Nice.",
+    "ja": "おお ピッタリだ！",
+    "speaker": "Yolanda",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Oh, yeah, I knew a Venus, she was one freaky ho.",
+    "ja": "ヴィーナスって知ってるけど ヤバい女だったよ",
+    "speaker": "Yolanda",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Finally, about fuckin' time!",
+    "ja": "やっと来た",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Yo, why's everything running so late?",
+    "ja": "ずいぶん遅いね",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Shit, you haven't heard? Counselor Reigns got canned.",
+    "ja": "聞いてないか？ カウンセラーがクビになった",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Oh, shit. So who they got me with now?",
+    "ja": "マジ？ 次の担当は誰？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Somebody named Gates, don't know anything about her.",
+    "ja": "ゲイツだ どんな女かは知らない",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Yo, he didn't get caught for bringing-",
+    "ja": "彼 まさかバレたの？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Nah, nah, we're good.",
+    "ja": "それは大丈夫だ",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Word is he got caught \"counseling\" with his hands down an inmate's pants.",
+    "ja": "受刑者に触って「カウンセリング」してたらしい",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Ugh. Dirty fuck.",
+    "ja": "うわ キモ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Hey, Wilson!",
+    "ja": "ウィルソン！",
+    "speaker": "CO Johnson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Seriously?",
+    "ja": "マジで？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "They want you over on C block.",
+    "ja": "C棟に行けって",
+    "speaker": "CO Johnson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Yeah, okay.",
+    "ja": "わかった",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Let me see that phone for a minute?",
+    "ja": "電話いいか？",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Carrying two joints and half a G of blow.",
+    "ja": "交通違反で捕まった時 ハッパと白粉を持ってた",
+    "speaker": "Shayna",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Uh-uh, bitch.",
+    "ja": "は？ 嘘でしょ",
+    "speaker": "Devin",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Oh, shit.",
+    "ja": "最悪",
+    "speaker": "Connie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "You gotta drive careful out there, bro.",
+    "ja": "運転には気をつけないと",
+    "speaker": "Shayna",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "They will pick you up for fuckin' anything. Anything.",
+    "ja": "何か理由つけて捕まるよ ほんとに",
+    "speaker": "Shayna",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Oh yeah? Stop.",
+    "ja": "おい 止まれ",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Got it!",
+    "ja": "了解",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "No, look what- look what you did!",
+    "ja": "ちょっと ひどい！",
+    "speaker": "Tera",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Alright.",
+    "ja": "よし",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Oh, you wanna go? Okay, whatever.",
+    "ja": "やるか？ かかってきな",
+    "speaker": "Ronda",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Swallowed a gram, but it ain't passed yet.",
+    "ja": "小袋を飲み込んだけど まだ出てこないみたい",
+    "speaker": "Shayna",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Is what your ass needs to do.",
+    "ja": "あんたは寝るところからやり直しな",
+    "speaker": "Ronda",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Don't even.",
+    "ja": "やめなって",
+    "speaker": "Tera",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "And she might have stuck a little up her coochie too,",
+    "ja": "アソコにも隠してそう",
+    "speaker": "Shayna",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "'cause girl was walkin' funny.",
+    "ja": "歩き方がおかしかったもん",
+    "speaker": "Shayna",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "We're cleaning them out.",
+    "ja": "全部片付けるよ",
+    "speaker": "Isabelle",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Shit.",
+    "ja": "クソ…",
+    "speaker": "Penelope",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I'm gonna stop and pull your hair out if you keep movin'.",
+    "ja": "動き続けたら髪の毛抜くよ",
+    "speaker": "Penelope",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Okay.",
+    "ja": "わかった",
+    "speaker": "Olivia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Hey! Okay.",
+    "ja": "おい いいか",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "C'mon.",
+    "ja": "ほら",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "I'm trying to grip this thin-ass white girl hair.",
+    "ja": "細い髪を掴むのに必死なんだよ",
+    "speaker": "Penelope",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Yeah, so I called around a little on Gates,",
+    "ja": "ゲイツについて聞き回った",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "and you ain't the only one asking.",
+    "ja": "気にしてるのはお前だけじゃない",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "What ain't goin' on, fuck I don't wanna talk about it.",
+    "ja": "もう話したくない",
+    "speaker": "Niomi",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Stefanie Gates. Transferred over from county.",
+    "ja": "ステファニー・ゲイツだ 郡から移ってきた",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "That's how we do it.",
+    "ja": "これが俺たちのやり方だ",
+    "speaker": "Devin",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "You writing that down?",
+    "ja": "ちゃんとメモしてる？",
+    "speaker": "Isabelle",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Been in the job ten years. Real by the book.",
+    "ja": "ベテランできっちりした性格 情報はそれだけ",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Great.",
+    "ja": "そう",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Caminos.",
+    "ja": "カミノス",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Just tell her what she needs to know,",
+    "ja": "簡潔に話せ",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "keep it straight, don't fuck around.",
+    "ja": "ふざけるんじゃないぞ",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Yeah.",
+    "ja": "うん…",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "And uh, heard they don't got too much",
+    "ja": "それと 郡の連中は",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "of a sense of humor over there at County, so.",
+    "ja": "ユーモアのセンスがないらしい",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Don't get cute?",
+    "ja": "バカやるなってこと？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Yep, don't get cute.",
+    "ja": "そうだ",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Right.",
+    "ja": "了解",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Okay.",
+    "ja": "よし",
+    "speaker": "CO Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Lucia Caminos here.",
+    "ja": "ルシア・カミノスです",
+    "speaker": "Wilson",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Send her in.",
+    "ja": "通して",
+    "speaker": "Stefanie Gates",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Lucia Caminos?",
+    "ja": "ルシア・カミノス？",
+    "speaker": "Stefanie Gates",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Uh, sure.",
+    "ja": "そうよ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Take a seat.",
+    "ja": "座って",
+    "speaker": "Stefanie Gates",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Do you mind if I call you Lucia,",
+    "ja": "ルシアと呼んでも？",
+    "speaker": "Stefanie Gates",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "or is there another name you prefer?",
+    "ja": "他の呼び方がいい？",
+    "speaker": "Stefanie Gates",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Lucia's fine.",
+    "ja": "ルシアでいいよ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Okay, Lucia.",
+    "ja": "わかったわ ルシア",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I'm Stefanie. Do you know why you're here?",
+    "ja": "ステファニーよ ここに来た理由わかってる？",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Bad luck, I guess.",
+    "ja": "ツイてなかった",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Not what I mean in here with me. You filled out a form.",
+    "ja": "そうじゃなくて 私と話すのはなぜ？ 書類を書いたでしょ",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Yeah. Convicts talk.",
+    "ja": "受刑者面談でしょ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "So what have they been saying?",
+    "ja": "何て説明されたの？",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "They're saying that you locked up more of us than you can handle,",
+    "ja": "定員オーバーになったから",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "and now you've gotta let some of us go.",
+    "ja": "何人か釈放したいって",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Not quite let you go. It's a supervised release program.",
+    "ja": "釈放ではないわ 監視付き仮出所プログラムよ",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Home detention, electronic monitoring.",
+    "ja": "自宅拘禁 電子監視よ",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "The county's looking to free up some beds.",
+    "ja": "郡は監房を空けたいの",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "You could be eligible for the trial.",
+    "ja": "あなたは審査対象になれるかも",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "What have I gotta do?",
+    "ja": "どうすればいい？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "You just need to help me understand you, okay?",
+    "ja": "あなたを理解したいの いい？",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "First question, how did you get in trouble?",
+    "ja": "最初の質問よ なぜ犯罪を？",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Same that happened to everyone else in here. Had a shitty day.",
+    "ja": "よくある話よ あの日は運が悪かった",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Real fuckin' stupid.",
+    "ja": "本当にバカだった",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "So it wasn't premeditated?",
+    "ja": "計画的ではなかった？",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "No. I was in a coffee shop, my whole life was falling apart, and",
+    "ja": "ええ カフェにいて 人生も何もかもメチャクチャで その時",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I got a sign.",
+    "ja": "閃いたの",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Hey.",
+    "ja": "あの",
+    "speaker": "Waitress",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Hey, I just realized, I left my money in my car.",
+    "ja": "車にお金を忘れたの",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "So if you could just watch- Oh, but you don't have to.",
+    "ja": "見ててくれる？ そんなこと",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I'm not going anywhere, it's just two minutes. But, Miss!",
+    "ja": "すぐだから2分ぐらい でも…",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Two minutes. Miss!",
+    "ja": "2分だけ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Where are you?",
+    "ja": "どこよ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Got it.",
+    "ja": "よし",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Just the money.",
+    "ja": "お金だけ取って",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "No fuck ups.",
+    "ja": "ヘタしないで",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "This is a stick up.",
+    "ja": "強盗よ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Hands up, this is a fuckin' stick up.",
+    "ja": "手を上げて 強盗よ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I was wearing my lifts that day, right?",
+    "ja": "あの日は厚底を履いててさ",
+    "speaker": "Local",
+    "gender": "u",
+    "color": "#ffffff"
+  },
+  {
+    "en": "Hang on. Un momento.",
+    "ja": "ちょっと待って",
+    "speaker": "Local",
+    "gender": "u",
+    "color": "#ffffff"
+  },
+  {
+    "en": "Hands up!",
+    "ja": "手を上げろ！",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "This is a stick up!",
+    "ja": "強盗よ！",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Damn it!",
+    "ja": "クソッ！",
+    "speaker": "Local",
+    "gender": "u",
+    "color": "#ffffff"
+  },
+  {
+    "en": "In Spanish: Oh hell no, for real?",
+    "ja": "（スペイン語）マジかよ？",
+    "speaker": "Local",
+    "gender": "u",
+    "color": "#ffffff"
+  },
+  {
+    "en": "Look, I don't wanna hurt anybody. I just need money quick.",
+    "ja": "傷つけたくない 金が急ぎで必要なの",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "You! Cash on the counter right fucking now!",
+    "ja": "あんた！ 現金を今すぐカウンターに出せ！",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Hurry the fuck up!",
+    "ja": "急げっての！",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Take it, that's all there is.",
+    "ja": "これで全部です",
+    "speaker": "Teller",
+    "gender": "u",
+    "color": "#ffffff"
+  },
+  {
+    "en": "This better be all of it.",
+    "ja": "全部よね？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I fuckin' got her!",
+    "ja": "捕まえたぞ！",
+    "speaker": "Local",
+    "gender": "u",
+    "color": "#ffffff"
+  },
+  {
+    "en": "Whoa! Get the fuck off me!",
+    "ja": "離せ！",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Argh! What the fuck?",
+    "ja": "うっ 何すんの？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Stay down!",
+    "ja": "動くな！",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Ugh, shit.",
+    "ja": "もう…",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "And stay back! Don't make me start shooting!",
+    "ja": "下がれ！ 撃つぞ！",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Hey, you, stay there!",
+    "ja": "おい 止まれ！",
+    "speaker": "Cop",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "She's going across the rooftop!",
+    "ja": "屋上のあいつだ！ 止まれ！",
+    "speaker": "Cop",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Hey on the roof! Stop right there!",
+    "ja": "おい！ 逃げたぞ！",
+    "speaker": "Cop",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Hey! We got a runner!",
+    "ja": "そこで止まれ！",
+    "speaker": "Cop",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Great timing. Fuckin' perfect. Damn!",
+    "ja": "来るの早すぎでしょ",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Gotta lose 'em. Gotta fucking lose 'em.",
+    "ja": "ったく そこら中にいる",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "She took off that way!",
+    "ja": "女はあっちに！",
+    "speaker": "Cop",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Suspect's in custody.",
+    "ja": "容疑者を確保した",
+    "speaker": "Cop",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "I gotta get back to the coffee shop, it's right there.",
+    "ja": "待って ねえ 待って 戻らないと",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "No, wait. No, I said wait! I gotta get back there.",
+    "ja": "コーヒーショップに戻らないと",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Let me go, I gotta get back to the coffee shop, you don't understand.",
+    "ja": "コーヒーショップに置いたの",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Oh fuck! You gotta let me out, I can't do this right now! What's she sayin'?",
+    "ja": "出して！ ちょっと！ 何で守るの？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Something about a coffee shop. She left something behind.",
+    "ja": "コーヒーショップがどうとか 忘れ物かな",
+    "speaker": "Cop",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Copy that. We're here.",
+    "ja": "了解 今着いた",
+    "speaker": "Cop",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Oye, we've been calling you.",
+    "ja": "やっと来たか",
+    "speaker": "Manager",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "She just walked out and left it here.",
+    "ja": "これを置いてかれて…",
+    "speaker": "Manager",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "We don't know what to do with this, you know?",
+    "ja": "困ってたんだよ",
+    "speaker": "Manager",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "I got frijoles burning back there.",
+    "ja": "料理が焦げちまう",
+    "speaker": "Manager",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Yeah, we have the baby. I'm gonna need a CPS officer here right away.",
+    "ja": "赤ん坊がいるわ 保護局員を呼んで",
+    "speaker": "Cop",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Are you going to be able to take it away from us?",
+    "ja": "連れていってくれるのか？",
+    "speaker": "Manager",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "I mean, we're not running a daycare here.",
+    "ja": "ここは託児所じゃない",
+    "speaker": "Manager",
+    "gender": "m",
+    "color": "#64d2ff"
+  },
+  {
+    "en": "Okay, called child welfare, they're gonna send someone as soon as they can.",
+    "ja": "児童福祉局に連絡したわ すぐに人が来る",
+    "speaker": "Cop",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "In the meantime, you're just gonna have to hold tight.",
+    "ja": "それまでは頼むわ",
+    "speaker": "Cop",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I don't have a hope, do I?",
+    "ja": "やっぱ無理だよね？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Honey, you don't know how many beds we need to free up.",
+    "ja": "いい？ 監房がもう満室なのよ",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "If you let me out, supervised release or whatever,",
+    "ja": "もし釈放 いや 仮出所できたなら…",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "does that mean I get Tomas back?",
+    "ja": "トマスを返してくれる？",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Custody of your son is a different matter.",
+    "ja": "お子さんと暮らせるかは別問題よ",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "That's a case with the Department of Children and Families.",
+    "ja": "児童家庭局の管轄ね",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I don't think you'll get visitation right away.",
+    "ja": "すぐに面会は無理だと思う",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "But reintegrating yourself into the community,",
+    "ja": "でも社会復帰すれば",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "showing you can be a part of society, a home, a job, that",
+    "ja": "家庭や仕事を通して あなたが",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "those all are steps in the right direction.",
+    "ja": "社会の一員であることを証明するの",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I see on your form",
+    "ja": "あなたの書類では",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "you've put the father's address as your intended residence.",
+    "ja": "希望居住地が 子供の父親の所ね",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "A Jason Duval? Yeah.",
+    "ja": "ジェイソン・デュヴァル？ ええ",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "He's got a record.",
+    "ja": "彼は前科があるけど",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Are you sure that's the best place for you?",
+    "ja": "本当にそこでいいの？",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "To start your new life?",
+    "ja": "一からやり直せる？",
+    "speaker": "Stefanie",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "I hear what you're saying.",
+    "ja": "言いたいことはわかるけど…",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "But this was a wake up call for the both of us.",
+    "ja": "今回のことで二人とも目が覚めたの",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "He's straight.",
+    "ja": "彼は更生した",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "Best behavior.",
+    "ja": "模範そのもの",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  },
+  {
+    "en": "No more stupid shit.",
+    "ja": "もうバカなことはしない",
+    "speaker": "Lucia",
+    "gender": "f",
+    "color": "#ff7ab8"
+  }
+]
