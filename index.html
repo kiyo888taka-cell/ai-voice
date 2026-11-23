@@ -97,7 +97,7 @@
     #roi-box {
       position: absolute;
       border: 2px solid var(--accent);
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.58);
       pointer-events: none;
       border-radius: 6px;
     }
@@ -123,7 +123,6 @@
       overflow-y: auto;
       gap: 8px;
     }
-    /* サブ機から受信した左上操作ガイド枠 */
     .guide-box {
       background: rgba(255, 214, 10, 0.1);
       border: 1px solid rgba(255, 214, 10, 0.45);
@@ -143,7 +142,6 @@
       color: var(--guide);
       line-height: 1.35;
     }
-    /* メイン会話字幕枠 */
     .sub-box {
       flex: 1;
       background: var(--panel);
@@ -267,7 +265,7 @@
   </header>
 
   <!-- カメラ＆読み取り枠 -->
-  <div class="camera-wrap">
+  <div class="camera-wrap" id="camera-wrap">
     <video id="video" playsinline autoplay muted></video>
     <div id="roi-box"><span id="roi-label">字幕OCR枠</span></div>
   </div>
@@ -363,6 +361,7 @@
     let conn = null;
     let lastOcrEn = '';
     let isProcessing = false;
+    let cssScale = 1;
 
     // 翻訳キャッシュ（API消費節約）
     const CACHE_KEY = 'gta6_trans_cache_v1';
@@ -374,7 +373,6 @@
 
     // ====== 初期化 ======
     window.addEventListener('DOMContentLoaded', async () => {
-      // スライダー初期値反映
       document.getElementById('rng-zoom').value = roi.zoom;
       document.getElementById('rng-x').value = roi.x;
       document.getElementById('rng-y').value = roi.y;
@@ -383,11 +381,9 @@
       updateRoiBox();
       updateCacheCount();
 
-      // APIキー復元 (g_key)
       const savedKey = localStorage.getItem('g_key') || '';
       document.getElementById('api-key-input').value = savedKey;
 
-      // 公式辞書ロード
       await loadDictionary();
     });
 
@@ -412,7 +408,6 @@
       document.getElementById('btn-mode-sub').classList.toggle('active', mode === 'sub');
       document.getElementById('roi-label').textContent = mode === 'main' ? '字幕OCR枠' : '左上ガイドOCR枠';
 
-      // サブ機モードに切り替えた際、枠が下部デフォルトなら左上用に自動プリセット
       if (mode === 'sub' && roi.y > 40) {
         roi = { zoom: roi.zoom, x: 4, y: 6, w: 55, h: 25 };
         syncSlidersFromRoi();
@@ -454,7 +449,7 @@
       saveRoiSettings();
 
       const video = document.getElementById('video');
-      // ハードウェア光学ズーム対応チェック（iPhone Safari対応）
+      cssScale = 1;
       if (videoTrack && typeof videoTrack.getCapabilities === 'function') {
         const caps = videoTrack.getCapabilities();
         if (caps.zoom) {
@@ -464,8 +459,8 @@
           return;
         }
       }
-      // ハードウェアズーム非対応時はCSS拡大でフォールバック
-      video.style.transform = `scale(${roi.zoom})`;
+      cssScale = roi.zoom;
+      video.style.transform = `scale(${cssScale})`;
     }
 
     function updateRoiBox() {
@@ -506,6 +501,9 @@
         await initCamera();
         if (!ocrWorker) {
           ocrWorker = await Tesseract.createWorker('eng');
+          await ocrWorker.setParameters({
+            tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK
+          });
         }
         isScanning = true;
         btn.textContent = '■ 停止';
@@ -528,101 +526,166 @@
           }
           isProcessing = false;
         }
-        await new Promise(r => setTimeout(r, 450)); // 約0.45秒間隔でスキャン
+        await new Promise(r => setTimeout(r, 500));
       }
     }
 
     async function processFrame() {
       const video = document.getElementById('video');
+      const wrap = document.getElementById('camera-wrap');
       if (video.readyState < 2) return;
 
       const vw = video.videoWidth;
       const vh = video.videoHeight;
-      if (!vw || !vh) return;
+      const cw = wrap.clientWidth;
+      const ch = wrap.clientHeight;
+      if (!vw || !vh || !cw || !ch) return;
 
-      // ROI領域を切り抜いて二値化（高コントラスト化でOCR精度向上）
+      // object-cover で画面に表示されている実際の映像領域を計算
+      const videoRatio = vw / vh;
+      const wrapRatio = cw / ch;
+      let dispW, dispH, dispOffX, dispOffY;
+      if (videoRatio > wrapRatio) {
+        dispH = vh;
+        dispW = vh * wrapRatio;
+        dispOffX = (vw - dispW) / 2;
+        dispOffY = 0;
+      } else {
+        dispW = vw;
+        dispH = vw / wrapRatio;
+        dispOffX = 0;
+        dispOffY = (vh - dispH) / 2;
+      }
+
+      // CSSズームフォールバック時の中心拡大補正
+      const zW = dispW / cssScale;
+      const zH = dispH / cssScale;
+      const zOffX = dispOffX + (dispW - zW) / 2;
+      const zOffY = dispOffY + (dispH - zH) / 2;
+
+      const sx = zOffX + zW * (roi.x / 100);
+      const sy = zOffY + zH * (roi.y / 100);
+      const sw = zW * (roi.w / 100);
+      const sh = zH * (roi.h / 100);
+
       const canvas = document.getElementById('crop-canvas');
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-      // CSSズームフォールバック時の補正
-      const cssScale = (video.style.transform && video.style.transform !== 'scale(1)') ? roi.zoom : 1;
-      const effW = vw / cssScale;
-      const effH = vh / cssScale;
-      const offX = (vw - effW) / 2;
-      const offY = (vh - effH) / 2;
-
-      const sx = offX + effW * (roi.x / 100);
-      const sy = offY + effH * (roi.y / 100);
-      const sw = effW * (roi.w / 100);
-      const sh = effH * (roi.h / 100);
-
       canvas.width = Math.max(10, Math.floor(sw));
       canvas.height = Math.max(10, Math.floor(sh));
       ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
 
-      // 白文字字幕を際立たせる簡易グレースケール＆コントラスト強調
+      // 明るい字幕文字を抽出しやすく二値化
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const d = imgData.data;
+      let brightPixels = 0;
       for (let i = 0; i < d.length; i += 4) {
         const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-        const v = lum > 165 ? 255 : 0; // 明るい字幕文字を白、背景を黒に
+        const v = lum > 170 ? 255 : 0;
+        if (v === 255) brightPixels++;
         d[i] = d[i + 1] = d[i + 2] = v;
       }
       ctx.putImageData(imgData, 0, 0);
 
-      const { data: { text } } = await ocrWorker.recognize(canvas);
-      const cleaned = cleanOcrText(text);
-      if (!cleaned || cleaned.length < 3) return;
+      // 明るい文字ピクセルが極端に少ない（字幕がない・真っ暗）場合はスキップ
+      const brightRatio = brightPixels / (canvas.width * canvas.height);
+      if (brightRatio < 0.008) return;
 
-      // 直前と同じセリフならスキップ
+      const { data: { text } } = await ocrWorker.recognize(canvas);
+      const cleaned = cleanAndFilterOcrText(text);
+      if (!cleaned) return;
+
       if (similarity(cleaned, lastOcrEn) > 0.85) return;
       lastOcrEn = cleaned;
 
       if (appMode === 'sub') {
-        // サブ機（iPhone 8）：読み取った英語ガイドを翻訳してメイン機へ送信
         const translated = await translateText(cleaned, true);
         renderGuide(translated.ja, cleaned);
         if (conn && conn.open) {
           conn.send({ type: 'guide', en: cleaned, ja: translated.ja });
         }
       } else {
-        // メイン機（iPhone SE）：辞書照合 → 未知ならGemini翻訳
         const result = await translateText(cleaned, false);
-        renderSubtitle(result);
+        if (result) renderSubtitle(result);
       }
     }
 
-    function cleanOcrText(raw) {
-      return raw
+    // ゴミ文字・記号の羅列を弾くフィルター
+    function cleanAndFilterOcrText(raw) {
+      let s = raw
         .replace(/\n+/g, ' ')
-        .replace(/[|_~`\\]/g, '')
+        .replace(/[|_~`\\¥*©®™]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
+
+      // 英数字のカウント
+      const alphaNumMatches = s.match(/[A-Za-z0-9]/g) || [];
+      if (alphaNumMatches.length < 4) return '';
+
+      // 記号や句読点の比率が高すぎる（ノイズだらけの）文字列を除外
+      const nonWordRatio = (s.length - alphaNumMatches.length - (s.match(/ /g) || []).length) / Math.max(1, s.length);
+      if (nonWordRatio > 0.35) return '';
+
+      // 3文字以上のまともな英単語が1つもない場合はノイズとみなす
+      const words = s.split(/\s+/).filter(w => /^[A-Za-z']{3,}$/.test(w.replace(/[^A-Za-z']/g, '')));
+      if (words.length === 0) return '';
+
+      return s;
+    }
+
+    // OCR文字列から話者名と本文を抽出し、前後のノイズを削る
+    function extractSpeakerAndBody(rawText) {
+      let speaker = '';
+      let body = rawText;
+
+      const knownSpeakers = ['Stranger', 'Jason', 'Lucia', 'Stefanie Gates', 'Stefanie', 'CO Wilson', 'CO Johnson', 'Wilson', 'Waitress', 'Customer', 'Yolanda', 'Antonia', 'Zoey', 'Shayna', 'Devin', 'Connie', 'Ronda', 'Tera', 'Isabelle', 'Penelope', 'Olivia', 'Niomi', 'Local', 'Teller', 'Manager', 'Cop', 'Prison Recording'];
+      for (const sp of knownSpeakers) {
+        const idx = rawText.toLowerCase().indexOf(sp.toLowerCase() + ':');
+        if (idx !== -1) {
+          speaker = sp;
+          body = rawText.slice(idx + sp.length + 1).trim();
+          break;
+        }
+      }
+
+      if (!speaker) {
+        const colonIdx = rawText.indexOf(':');
+        if (colonIdx > 0 && colonIdx < 24) {
+          const candidate = rawText.slice(0, colonIdx).replace(/[^A-Za-z ]/g, '').trim();
+          if (candidate.length >= 2) {
+            speaker = candidate;
+            body = rawText.slice(colonIdx + 1).trim();
+          }
+        }
+      }
+
+      // 末尾に謎の1〜2文字ノイズや記号がくっついている場合を軽く整形
+      body = body.replace(/\s+[A-Za-z]{1,2}(\s+[A-Za-z]{1,2})?\s*$/, '').trim();
+      return { speaker, body };
     }
 
     // ====== 辞書照合 ＆ Gemini APIフォールバック ======
     async function translateText(enText, isGuideMode) {
-      // 話者プレフィックス（例: "Lucia: ..."）を分離
-      let speakerPrefix = '';
-      let bodyEn = enText;
-      const colonIdx = enText.indexOf(':');
-      if (colonIdx > 0 && colonIdx < 22) {
-        speakerPrefix = enText.slice(0, colonIdx).trim();
-        bodyEn = enText.slice(colonIdx + 1).trim();
-      }
+      const { speaker: speakerPrefix, body: bodyEn } = extractSpeakerAndBody(enText);
+      if (!bodyEn || bodyEn.length < 3) return null;
 
-      // 1. 公式辞書（gta6_dict.json）からあいまい検索（API消費ゼロ）
+      // 1. 公式辞書（gta6_dict.json）からノイズ耐性つき検索（API消費ゼロ）
       if (!isGuideMode && dictList.length > 0) {
         let bestMatch = null;
         let bestScore = 0;
+
         for (const item of dictList) {
-          const score = similarity(bodyEn, item.en);
+          let score = bestFuzzyScore(bodyEn, item.en);
+          // 話者名が一致したら少し加点
+          if (speakerPrefix && item.speaker && item.speaker.toLowerCase().includes(speakerPrefix.toLowerCase())) {
+            score = Math.min(1, score + 0.06);
+          }
           if (score > bestScore) {
             bestScore = score;
             bestMatch = item;
           }
         }
-        if (bestMatch && bestScore >= 0.72) {
+
+        if (bestMatch && bestScore >= 0.68) {
           return {
             ja: bestMatch.ja,
             en: bestMatch.en,
@@ -688,7 +751,6 @@
           }
         }
 
-        // キャッシュ保存
         transCache[cacheKey] = finalObj;
         localStorage.setItem(CACHE_KEY, JSON.stringify(transCache));
         updateCacheCount();
@@ -698,10 +760,48 @@
       }
     }
 
-    // レーベンシュタイン距離ベースの類似度 (0.0 ~ 1.0)
+    // 前後にOCRノイズが混ざっていても辞書文との一致度を高く出すスコア計算
+    function bestFuzzyScore(ocrBody, dictEn) {
+      const a = normalizeStr(ocrBody);
+      const b = normalizeStr(dictEn);
+      if (!a || !b) return 0;
+
+      let score = similarity(a, b);
+
+      // 辞書文がOCR文字列に含まれている場合（前後にノイズが付いたケース）
+      if (a.includes(b)) {
+        const containmentScore = b.length / a.length;
+        score = Math.max(score, Math.min(0.96, 0.75 + containmentScore * 0.21));
+      }
+
+      // 単語単位の重なり（Jaccard類似度）も評価
+      const wordsA = new Set(a.split(' ').filter(w => w.length >= 2));
+      const wordsB = new Set(b.split(' ').filter(w => w.length >= 2));
+      if (wordsA.size > 0 && wordsB.size > 0) {
+        let overlap = 0;
+        for (const w of wordsB) {
+          if (wordsA.has(w)) overlap++;
+        }
+        const recall = overlap / wordsB.size;
+        if (recall >= 0.7) {
+          score = Math.max(score, recall * 0.9);
+        }
+      }
+
+      return score;
+    }
+
+    function normalizeStr(s) {
+      return s
+        .toLowerCase()
+        .replace(/[^a-z0-9 ]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
     function similarity(s1, s2) {
-      const a = s1.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
-      const b = s2.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+      const a = normalizeStr(s1);
+      const b = normalizeStr(s2);
       if (!a || !b) return 0;
       if (a === b) return 1;
       const m = a.length, n = b.length;
@@ -756,7 +856,6 @@
       const subId = `gta6-cam-sub-${code}`;
 
       if (appMode === 'main') {
-        // メイン機はホストとして待機
         peer = new Peer(mainId);
         peer.on('open', () => {
           badge.textContent = `待機中(${code})`;
@@ -776,7 +875,6 @@
           console.error(err);
         });
       } else {
-        // サブ機はメイン機へ接続
         peer = new Peer(subId);
         peer.on('open', () => {
           conn = peer.connect(mainId);
