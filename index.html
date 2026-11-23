@@ -1,304 +1,821 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>AIライブ同時通訳 Pro</title>
-<style>
-:root{--fs:16px}
-body{font-family:-apple-system,sans-serif;margin:0;padding:12px;background:#121212;color:#fff}
-.card{background:#1e1e1e;padding:16px;border-radius:16px;max-width:600px;margin:0 auto}
-h2{margin:0 0 8px;font-size:18px;text-align:center;color:#4da3ff}
-label{font-size:12px;color:#aaa;display:block;margin-top:8px}
-input,select,textarea,button{width:100%;padding:11px;margin:4px 0;border-radius:10px;border:1px solid #333;background:#2c2c2c;color:#fff;font-size:16px;box-sizing:border-box}
-input[type=range]{padding:0;border:0;background:none}
-textarea{height:54px;font-size:13px}
-button{background:#0a84ff;border:none;font-weight:bold;margin-top:8px;-webkit-appearance:none}
-button.stop{background:#ff453a}
-button.sub{background:#3a3a3c;font-size:13px;padding:9px;margin-top:4px}
-.row{display:flex;gap:8px}.row>div{flex:1}
-details{margin-top:8px}summary{font-size:13px;color:#4da3ff;padding:6px 0}
-.status{font-size:13px;color:#30d158;text-align:center;margin:8px 0;font-weight:bold;word-break:break-all;min-height:18px}
-.live-box{background:#252528;padding:8px;border-radius:8px;font-size:13px;color:#ffd60a;min-height:20px;margin-bottom:6px;border:1px dashed #444}
-.latest{background:#0d2a4a;padding:12px;border-radius:12px;font-size:calc(var(--fs) + 6px);font-weight:bold;min-height:48px;margin-bottom:8px;line-height:1.4}
-.chat-log{background:#161616;padding:10px;border-radius:10px;height:38vh;overflow-y:auto;border:1px solid #2c2c2c}
-.msg{margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #2a2a2a}
-.orig{font-size:calc(var(--fs) - 3px);color:#aaa}
-.trans{font-size:var(--fs);color:#fff;font-weight:bold;margin-top:3px}
-.warn{font-size:12px;color:#ffd60a;background:rgba(255,214,10,.1);padding:6px;border-radius:8px}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>GTA6 Live Cam Translator</title>
+  <!-- PeerJS (iPhone 2台連携) -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <!-- Tesseract.js (ブラウザ内高速OCR) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b0d12;
+      --panel: #151922;
+      --border: #283042;
+      --accent: #00e5ff;
+      --male: #64d2ff;
+      --female: #ff7ab8;
+      --unknown: #ffffff;
+      --guide: #ffd60a;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* 上部ステータスバー */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      gap: 6px;
+    }
+    .mode-switch {
+      display: flex;
+      background: #0b0d12;
+      border-radius: 8px;
+      padding: 2px;
+      border: 1px solid var(--border);
+    }
+    .mode-switch button {
+      border: none;
+      background: transparent;
+      color: #8e98ad;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 6px;
+    }
+    .mode-switch button.active {
+      background: var(--accent);
+      color: #000;
+    }
+    .status-badges {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      font-size: 11px;
+    }
+    .badge {
+      padding: 3px 6px;
+      border-radius: 5px;
+      background: #1f2633;
+      color: #a8b3c7;
+      white-space: nowrap;
+    }
+    .badge.ok { background: #103826; color: #4ade80; }
+    .badge.warn { background: #3b2a10; color: #facc15; }
+
+    /* カメラ＆ROIプレビュー領域 */
+    .camera-wrap {
+      position: relative;
+      width: 100%;
+      height: 36dvh;
+      background: #000;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+    video#video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform-origin: center center;
+    }
+    /* 読み取り枠（ROI） */
+    #roi-box {
+      position: absolute;
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+      pointer-events: none;
+      border-radius: 6px;
+    }
+    #roi-label {
+      position: absolute;
+      top: -18px;
+      left: 0;
+      background: var(--accent);
+      color: #000;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    /* 字幕・ガイド表示エリア（メイン表示） */
+    .display-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px 12px;
+      overflow-y: auto;
+      gap: 8px;
+    }
+    /* サブ機から受信した左上操作ガイド枠 */
+    .guide-box {
+      background: rgba(255, 214, 10, 0.1);
+      border: 1px solid rgba(255, 214, 10, 0.45);
+      border-radius: 8px;
+      padding: 8px 10px;
+      min-height: 44px;
+    }
+    .guide-tag {
+      font-size: 10px;
+      color: var(--guide);
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    #guide-ja {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--guide);
+      line-height: 1.35;
+    }
+    /* メイン会話字幕枠 */
+    .sub-box {
+      flex: 1;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+    }
+    #speaker-tag {
+      font-size: 11px;
+      opacity: 0.85;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+    #sub-ja {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.4;
+      color: var(--unknown);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.85);
+      word-break: keep-all;
+    }
+    #sub-en {
+      font-size: 12px;
+      color: #8e98ad;
+      margin-top: 6px;
+    }
+
+    /* 下部コントロール＆設定ドロワー */
+    .controls-bar {
+      display: flex;
+      gap: 6px;
+      padding: 8px 10px;
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      flex: 1;
+      padding: 10px 6px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #1f2633;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .btn.primary {
+      background: var(--accent);
+      color: #000;
+      border: none;
+    }
+    .btn.stop {
+      background: #ef4444;
+      color: #fff;
+      border: none;
+    }
+
+    /* 折りたたみ設定パネル */
+    #settings-drawer {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 50;
+      padding: 14px;
+      overflow-y: auto;
+    }
+    #settings-drawer.open { display: block; }
+    .drawer-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      max-width: 500px;
+      margin: 0 auto 20px;
+    }
+    .drawer-card h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    .row label { min-width: 95px; color: #cbd5e1; }
+    .row input[type="range"] { flex: 1; }
+    .row input[type="text"], .row input[type="password"] {
+      flex: 1;
+      background: #0b0d12;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .val-num { min-width: 38px; text-align: right; font-variant-numeric: tabular-nums; }
+  </style>
 </head>
 <body>
-<div class="card">
-<h2>🎙️ AIライブ同時通訳 Pro</h2>
-<div class="warn">⚠️ <b>イヤホン着用</b>を推奨（スピーカーだと訳音声を再認識します）</div>
-<label>Gemini APIキー（自動保存）</label>
-<input type="password" id="apiKey" placeholder="キーを貼り付け">
-<label>通訳の方向</label>
-<select id="direction">
-<option value="ja-to-en">🇯🇵 日本語 ➔ 🇺🇸 英語</option>
-<option value="en-to-ja">🇺🇸 英語 ➔ 🇯🇵 日本語</option>
-</select>
-<button type="button" id="toggleBtn">通訳スタート（マイクON）</button>
-<div class="status" id="status">待機中...</div>
-<div class="live-box" id="liveText">🗣️ 認識中の言葉がここに出ます</div>
-<div class="latest" id="latest">最新の訳がここに大きく出ます</div>
-<div class="chat-log" id="chatLog"></div>
-<details>
-<summary>⚙️ 設定（声・速度・表示）</summary>
-<label>声の選択（訳音声）</label>
-<select id="voice"></select>
-<div class="row">
-<div><label>基本の読み上げ速度</label><select id="rate">
-<option value="0.9">ゆっくり</option><option value="1.05">標準</option><option value="1.2">速め</option><option value="1.4">かなり速い</option></select></div>
-<div><label>区切り待ち時間</label><select id="stable">
-<option value="500">短い(速い会話)</option><option value="800">標準</option><option value="1300">長い</option></select></div>
-<div><label>文字サイズ</label><select id="fontSize">
-<option value="14">小</option><option value="16">中</option><option value="20">大</option><option value="26">特大</option></select></div>
-</div>
-<label>コンテンツの種類</label>
-<select id="scene">
-<option value="vlog">Vlog・YouTubeトーク</option>
-<option value="game">ゲーム実況・配信</option>
-<option value="talk">ポッドキャスト・対談</option>
-<option value="chat">友人同士の雑談</option>
-<option value="news">ニュース・解説</option>
-</select>
-<label>話題・登場人物メモ（例: ○○というゲームの配信者Jack）</label>
-<textarea id="contextPrompt" placeholder="誰が何について話しているか"></textarea>
-<label>用語集（1行ずつ「原語=訳」）</label>
-<textarea id="gloss" placeholder="GG=ナイスゲーム&#10;Jack=ジャック"></textarea>
-<button type="button" class="sub" id="testBtn">🔊 翻訳テスト（「聞こえますか」）</button>
-<button type="button" class="sub" id="clearBtn">履歴・文脈をリセット</button>
-</details>
-</div>
-<script>
-const MODEL="gemini-3.1-flash-lite";
-const API_URL="https://generativelanguage.googleapis.com/v1beta/models/"+MODEL+":generateContent?key=";
-const $=id=>document.getElementById(id);
-const MAP={apiKey:"g_key",direction:"g_dir",scene:"g_scene",contextPrompt:"g_topic",gloss:"g_gloss",rate:"g_rate",fontSize:"g_fs",stable:"g_st"};
-let rec=null,run=false,hist=[],chain=Promise.resolve(),sentLen=0,latestFull="",timer=null,wake=null;
-const setSt=m=>{$("status").innerText=m;};
-let spQ=[],spBusy=false,spTok=0,spTimer=null,recRunning=false,recStarting=0,lastStart=0,fails=0,perm=0,restartT=null,wd=null;
-window.onerror=m=>setSt("⚠️ JSエラー: "+m);
 
-function load(){
-  for(const id in MAP){const v=localStorage.getItem(MAP[id]);if(v!==null)$(id).value=v;}
-  applyFs();
-}
-function save(){for(const id in MAP)localStorage.setItem(MAP[id],$(id).value);}
-function applyFs(){document.documentElement.style.setProperty("--fs",$("fontSize").value+"px");}
-const outLang=()=>$("direction").value==="ja-to-en"?"en-US":"ja-JP";
-const inLang=()=>$("direction").value==="ja-to-en"?"ja-JP":"en-US";
+  <!-- 上部バー -->
+  <header>
+    <div class="mode-switch">
+      <button id="btn-mode-main" class="active" onclick="setMode('main')">メイン(SE)</button>
+      <button id="btn-mode-sub" onclick="setMode('sub')">サブ(8/ガイド)</button>
+    </div>
+    <div class="status-badges">
+      <span id="badge-dict" class="badge">辞書: 読込中</span>
+      <span id="badge-peer" class="badge">連携: 未接続</span>
+    </div>
+  </header>
 
-function loadVoices(){
-  if(!window.speechSynthesis)return;
-  const L=outLang().slice(0,2),sel=$("voice");
-  const vs=speechSynthesis.getVoices().filter(v=>v.lang.replace("_","-").toLowerCase().startsWith(L));
-  sel.innerHTML='<option value="">自動（おすすめ）</option>'+vs.map(v=>'<option value="'+v.name+'">'+v.name+" ("+v.lang+")</option>").join("");
-  const s=localStorage.getItem("g_voice_"+L);if(s)sel.value=s;
-}
-function pickVoice(){
-  const L=outLang().slice(0,2),vs=speechSynthesis.getVoices().filter(v=>v.lang.replace("_","-").toLowerCase().startsWith(L));
-  const name=$("voice").value;
-  if(name)return vs.find(v=>v.name===name);
-  return vs.find(v=>/premium|enhanced|siri/i.test(v.name))||vs.find(v=>v.lang.replace("_","-")===outLang())||vs[0];
-}
+  <!-- カメラ＆読み取り枠 -->
+  <div class="camera-wrap">
+    <video id="video" playsinline autoplay muted></video>
+    <div id="roi-box"><span id="roi-label">字幕OCR枠</span></div>
+  </div>
 
-document.addEventListener("DOMContentLoaded",()=>{
-  load();loadVoices();
-  if(window.speechSynthesis)speechSynthesis.onvoiceschanged=loadVoices;
-  for(const id in MAP)$(id).addEventListener("change",()=>{save();if(id==="fontSize")applyFs();if(id==="direction"){loadVoices();}});
-  $("apiKey").addEventListener("input",save);$("contextPrompt").addEventListener("input",save);$("gloss").addEventListener("input",save);
-  $("voice").addEventListener("change",()=>localStorage.setItem("g_voice_"+outLang().slice(0,2),$("voice").value));
-  $("toggleBtn").addEventListener("click",()=>run?stop():start());
-  $("clearBtn").addEventListener("click",()=>{hist=[];$("chatLog").innerHTML="";$("latest").innerText="";});
-  $("testBtn").addEventListener("click",()=>{unlock();enqueue("聞こえますか",true);});
-  document.addEventListener("visibilitychange",()=>{if(run&&document.visibilityState==="visible")getWake();});
-});
+  <!-- 翻訳結果表示 -->
+  <div class="display-area">
+    <div class="guide-box" id="guide-container">
+      <div class="guide-tag">📍 左上ガイド・目標（サブ機連携）</div>
+      <div id="guide-ja">待機中...</div>
+    </div>
 
-function unlock(){try{speechSynthesis.speak(new SpeechSynthesisUtterance(""));}catch(e){}}
-async function getWake(){try{if(navigator.wakeLock)wake=await navigator.wakeLock.request("screen");}catch(e){}}
+    <div class="sub-box">
+      <div id="speaker-tag">READY</div>
+      <div id="sub-ja">「開始」を押してTV画面を映してください</div>
+      <div id="sub-en">---</div>
+    </div>
+  </div>
 
-function start(){
-  if(!$("apiKey").value.trim()){setSt("⚠️ APIキーを入力してください");return;}
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){setSt("⚠️ Safariで開いてください");return;}
-  save();unlock();getWake();
-  run=true;startWatchdog();$("toggleBtn").innerText="通訳を停止する";$("toggleBtn").classList.add("stop");
-  setSt("⏳ マイク起動中...");startRec();
-}
-function stop(){
-  run=false;clearTimeout(timer);clearInterval(wd);clearTimeout(restartT);restartT=null;
-  try{speechSynthesis.cancel();}catch(e){}
-  try{if(rec){rec.onend=null;rec.onresult=null;rec.onerror=null;rec.onstart=null;rec.abort();rec=null;}}catch(e){}
-  try{if(wake){wake.release();wake=null;}}catch(e){}
-  spQ=[];spBusy=false;spTok++;clearTimeout(spTimer);recRunning=false;recStarting=0;
-  $("toggleBtn").innerText="通訳スタート（マイクON）";$("toggleBtn").classList.remove("stop");
-  setSt("停止中");
-}
+  <!-- 下部操作ボタン -->
+  <div class="controls-bar">
+    <button id="btn-toggle-scan" class="btn primary" onclick="toggleScan()">▶ 開始</button>
+    <button class="btn" onclick="openSettings()">⚙️ 枠・ズーム・連携</button>
+  </div>
 
-const INC_EN=/\b(and|but|so|because|that|which|who|to|of|the|a|an|with|or|if|when|while|like|as|for|in|on|at|my|your|i|you|we|they|is|are|was|just|really)$/i;
-const INC_JA=/(が|けど|けれど|て|で|し|から|ので|を|に|は|の|と|や|って|たら|ば)$/;
-function incomplete(t){
-  if(/[.?!。？！]$/.test(t))return false;
-  return inLang()==="ja-JP"?INC_JA.test(t):INC_EN.test(t.replace(/[,…]+$/,"").trim());
-}
-function flush(force){
-  clearTimeout(timer);
-  const t=latestFull.slice(sentLen).trim();
-  if(!t)return;
-  const maxLen=inLang()==="ja-JP"?40:90;
-  if(force!==true&&incomplete(t)&&t.length<maxLen){timer=setTimeout(()=>flush(true),1200);return;}
-  sentLen=latestFull.length;
-  $("liveText").innerText="✅ 確定: "+t;enqueue(t,false);
-}
+  <!-- 設定モーダル -->
+  <div id="settings-drawer">
+    <div class="drawer-card">
+      <h3>1. iPhone 2台連携（4桁の合言葉）</h3>
+      <div class="row">
+        <label>4桁コード</label>
+        <input type="text" id="pair-code" maxlength="4" inputmode="numeric" placeholder="例: 7744" />
+        <button class="btn primary" style="flex:0 0 80px;" onclick="connectPeer()">接続</button>
+      </div>
+      <div style="font-size:11px; color:#94a3b8; margin-bottom:12px;">
+        ※メイン機(SE)とサブ機(8)の両方で同じ4桁の数字を入れて「接続」を押してください。
+      </div>
 
-function scheduleRestart(d){
-  if(!run||restartT)return;
-  restartT=setTimeout(()=>{restartT=null;startRec();},d);
-}
-function startWatchdog(){
-  clearInterval(wd);
-  wd=setInterval(()=>{
-    if(!run)return;
-    const stuck=recStarting&&Date.now()-recStarting>=5000;
-    if(stuck){setSt("🔄 マイク再接続中...");startRec();}
-    else if(!recRunning&&!restartT&&!recStarting)scheduleRestart(200);
-  },2000);
-}
-function startRec(){
-  if(!run)return;
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(rec){rec.onend=null;rec.onresult=null;rec.onerror=null;rec.onstart=null;try{rec.abort();}catch(e){}}
-  const me=rec=new SR();
-  me.continuous=true;me.interimResults=true;me.lang=inLang();
-  sentLen=0;latestFull="";recRunning=false;recStarting=Date.now();lastStart=Date.now();
-  const sep=inLang()==="ja-JP"?"":" ",maxLen=inLang()==="ja-JP"?40:90;
-  me.onstart=()=>{if(rec!==me)return;recRunning=true;recStarting=0;if(!spBusy)setSt("🎙️ 聞き取り中... 話してください");};
-  me.onresult=e=>{
-    if(rec!==me)return;
-    perm=0;
-    let full="";
-    for(let i=0;i<e.results.length;i++)full+=(i?sep:"")+e.results[i][0].transcript;
-    if(sentLen>full.length)sentLen=0;
-    latestFull=full;
-    const pend=full.slice(sentLen).trim();
-    $("liveText").innerText="🗣️ "+pend;
-    clearTimeout(timer);
-    if(e.results[e.results.length-1].isFinal){flush();}
-    else if(pend){const big=pend.length>maxLen;timer=setTimeout(()=>flush(big),big?200:+$("stable").value);}
-  };
-  me.onerror=e=>{
-    if(rec!==me)return;
-    if(e.error==="not-allowed"||e.error==="service-not-allowed"){
-      perm++;
-      if(perm>=4){setSt("⚠️ マイクが許可されていません（設定を確認）");stop();}
-      else setSt("🔄 マイク再接続中...("+perm+")");
-    }else if(e.error!=="no-speech"&&e.error!=="aborted")setSt("⚠️ 音声エラー: "+e.error+"（自動再開）");
-  };
-  me.onend=()=>{
-    if(rec!==me)return;
-    flush(true);recRunning=false;recStarting=0;
-    const quick=Date.now()-lastStart<1500;
-    fails=quick?fails+1:0;
-    scheduleRestart(Math.min(250+fails*400,3000));
-  };
-  try{me.start();}catch(e){recStarting=0;scheduleRestart(600);}
-}
+      <h3>2. カメラズーム ＆ 読み取り枠調整</h3>
+      <div class="row">
+        <label>ズーム倍率</label>
+        <input type="range" id="rng-zoom" min="1" max="5" step="0.1" value="1.5" oninput="updateCameraParams()" />
+        <span class="val-num" id="val-zoom">1.5x</span>
+      </div>
+      <div class="row">
+        <label>枠の左右 (X)</label>
+        <input type="range" id="rng-x" min="0" max="80" step="1" value="10" oninput="updateRoiBox()" />
+        <span class="val-num" id="val-x">10%</span>
+      </div>
+      <div class="row">
+        <label>枠の上下 (Y)</label>
+        <input type="range" id="rng-y" min="0" max="85" step="1" value="65" oninput="updateRoiBox()" />
+        <span class="val-num" id="val-y">65%</span>
+      </div>
+      <div class="row">
+        <label>枠の幅 (W)</label>
+        <input type="range" id="rng-w" min="15" max="100" step="1" value="80" oninput="updateRoiBox()" />
+        <span class="val-num" id="val-w">80%</span>
+      </div>
+      <div class="row">
+        <label>枠の高さ (H)</label>
+        <input type="range" id="rng-h" min="8" max="60" step="1" value="22" oninput="updateRoiBox()" />
+        <span class="val-num" id="val-h">22%</span>
+      </div>
 
-function enqueue(text,test){
-  const dir=$("direction").value;
-  const p=trans(text,dir);
-  chain=chain.then(()=>p).then(t=>{
-    if(!t)return;
-    logMsg(text,t);speak(t);
-    if(test)setSt("✅ 翻訳成功");
-  });
-}
+      <h3>3. Gemini API設定（未知テキスト用）</h3>
+      <div class="row">
+        <label>APIキー (g_key)</label>
+        <input type="password" id="api-key-input" placeholder="AIzaSy..." />
+        <button class="btn" style="flex:0 0 70px;" onclick="saveApiKey()">保存</button>
+      </div>
+      <div class="row">
+        <label>キャッシュ件数</label>
+        <span id="cache-count" style="flex:1; color:#94a3b8;">0 件</span>
+        <button class="btn" style="flex:0 0 90px; font-size:11px;" onclick="clearTransCache()">キャッシュ削除</button>
+      </div>
 
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const SCENE={game:"ゲーム実況・配信。テンション高め、ゲーム用語が多い。",vlog:"VlogやYouTubeの一人語り。カジュアル。",talk:"ポッドキャストや対談。話者が入れ替わる。",chat:"友人同士の砕けた雑談。",news:"ニュース・解説。丁寧で正確な語調。"};
-const SLANG="スラング目安: ngl=正直/fr=マジで/bet=了解・いいね/no cap=ガチで/lowkey=ちょっと・内心/highkey=めっちゃ/cooked=終わった/mid=微妙/sus=怪しい/rizz=モテ力/goated=神/based=筋が通ってて最高/bruh=おいおい/deadass=マジで/slay=最高・決まってる/ate=完璧だった/W・L=勝ち・負け/salty=ふてくされ/tilted=イライラ/fire=ヤバくて良い/vibe=雰囲気/ghost=音信不通/cringe=痛い。";
-async function trans(text,dir){
-  const key=encodeURIComponent($("apiKey").value.replace(/\s+/g,""));
-  const lang=dir==="ja-to-en"?"英語":"日本語";
-  const ej=dir==="en-to-ja";
-  const rules=ej
-    ?"あなたは同時通訳者。英語の発話を、耳で聞いて自然な話し言葉の日本語に訳し、訳文のみ出力する。\n規則:\n1.言いよどみ(um, uh, like, you know)や言い直しは省く。\n2.長い文は短く区切り、「〜で、」「〜けど、」でつなぎ、日本語として自然な語順にする。\n3.音声認識の誤変換は文脈と用語集から補正する。\n4.入力は文の途中で切れていることがある。直前の訳の続きとして自然につなぎ、訳済みの部分は繰り返さない。\n5.スラング・略語・ネットミームは直訳せず、日本語話者が同じテンションで使う表現(ガチで、エグい、ヤバい等)に置き換える。不明なら文脈から推測する。\n6.罵倒や下品な表現も弱めすぎず、話者の強さに合わせる。\n"+SLANG
-    :"You are a simultaneous interpreter. Translate the Japanese speech into natural spoken English, as a native would say it with the same energy. Output the translation only. Drop fillers, fix likely speech-recognition errors from context, split long sentences, treat input as possibly cut mid-sentence (continue naturally from the previous translation, never repeat it), and render Japanese slang with equivalent English slang.\n";
-  const topic=$("contextPrompt").value.trim(),gl=$("gloss").value.trim();
-  const sys=rules+"\n場面: "+(SCENE[$("scene").value]||"")+(topic?"\n話題・登場人物: "+topic:"")+(gl?"\n用語集(必ず従う):\n"+gl:"");
-  const h=hist.slice(-6).map(x=>x.o+" => "+x.t).join("\n");
-  const msg=(h?"【直前の文脈】\n"+h+"\n":"")+"【訳す文】\n"+text;
-  const body=JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:[{parts:[{text:msg}]}],generationConfig:{temperature:0.3,maxOutputTokens:400}});
-  for(let n=0;n<3;n++){
-    try{
-      const r=await fetch(API_URL+key,{method:"POST",headers:{"Content-Type":"application/json"},body:body});
-      if(r.ok){
-        const d=await r.json();
-        const t=((d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[]).map(p=>p.text||"").join("").trim();
-        if(t){hist.push({o:text,t:t});if(hist.length>30)hist.shift();return t;}
-        return null;
+      <button class="btn primary" style="width:100%; margin-top:8px;" onclick="closeSettings()">閉じる</button>
+    </div>
+  </div>
+
+  <!-- OCR切り抜き用隠しCanvas -->
+  <canvas id="crop-canvas" style="display:none;"></canvas>
+
+  <script>
+    // ====== 状態管理 ======
+    let appMode = 'main'; // 'main' | 'sub'
+    let isScanning = false;
+    let videoStream = null;
+    let videoTrack = null;
+    let ocrWorker = null;
+    let dictList = [];
+    let peer = null;
+    let conn = null;
+    let lastOcrEn = '';
+    let isProcessing = false;
+
+    // 翻訳キャッシュ（API消費節約）
+    const CACHE_KEY = 'gta6_trans_cache_v1';
+    let transCache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+
+    // ROI・ズーム設定の保存・復元
+    const ROI_KEY = 'gta6_roi_settings_v1';
+    let roi = JSON.parse(localStorage.getItem(ROI_KEY) || '{"zoom":1.5,"x":10,"y":65,"w":80,"h":22}');
+
+    // ====== 初期化 ======
+    window.addEventListener('DOMContentLoaded', async () => {
+      // スライダー初期値反映
+      document.getElementById('rng-zoom').value = roi.zoom;
+      document.getElementById('rng-x').value = roi.x;
+      document.getElementById('rng-y').value = roi.y;
+      document.getElementById('rng-w').value = roi.w;
+      document.getElementById('rng-h').value = roi.h;
+      updateRoiBox();
+      updateCacheCount();
+
+      // APIキー復元 (g_key)
+      const savedKey = localStorage.getItem('g_key') || '';
+      document.getElementById('api-key-input').value = savedKey;
+
+      // 公式辞書ロード
+      await loadDictionary();
+    });
+
+    async function loadDictionary() {
+      const badge = document.getElementById('badge-dict');
+      try {
+        const res = await fetch('./gta6_dict.json');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        dictList = await res.json();
+        badge.textContent = `辞書: ${dictList.length}件`;
+        badge.className = 'badge ok';
+      } catch (e) {
+        badge.textContent = '辞書: なし(APIのみ)';
+        badge.className = 'badge warn';
       }
-      if(r.status===429||r.status>=500){setSt("⏳ 混雑中。再試行("+r.status+")");await sleep(700*(n+1));continue;}
-      const tx=await r.text();setSt("⚠️ 通信エラー("+r.status+"): "+tx.slice(0,80));return null;
-    }catch(err){setSt("⚠️ 通信失敗。再試行中...");await sleep(600);}
-  }
-  return null;
-}
+    }
 
-function speak(t){
-  if(!window.speechSynthesis)return;
-  spQ.push(t);
-  while(spQ.length>4)spQ.shift();
-  if(!spBusy)playNext();
-}
-function playNext(retried){
-  clearTimeout(spTimer);
-  if(!spQ.length){
-    spBusy=false;
-    if(run){setSt("🎙️ 聞き取り中... 話してください");if(!recRunning)scheduleRestart(100);}
-    return;
-  }
-  spBusy=true;
-  const t=spQ.shift(),tok=++spTok;
-  const u=new SpeechSynthesisUtterance(t);
-  u.lang=outLang();
-  const v=pickVoice();if(v)u.voice=v;
-  const n=spQ.length,boost=n>=3?1.3:n>=2?1.15:1;
-  u.rate=Math.min(Math.max(+$("rate").value*boost,0.6),1.8);
-  let fin=false,started=false;
-  const done=()=>{
-    if(fin||tok!==spTok)return;
-    fin=true;clearTimeout(spTimer);
-    if(run&&!recRunning)scheduleRestart(100);
-    playNext();
-  };
-  const maxMs=4000+t.length*(outLang()==="ja-JP"?300:120)/u.rate;
-  const stuck=()=>{
-    if(fin)return;
-    try{speechSynthesis.cancel();}catch(e){}
-    if(!started&&!retried){fin=true;spQ.unshift(t);setTimeout(()=>playNext(true),100);}
-    else done();
-  };
-  u.onstart=()=>{started=true;clearTimeout(spTimer);spTimer=setTimeout(stuck,maxMs);setSt("🔊 訳音声を再生中"+(spQ.length?"（待ち"+spQ.length+"）":""));};
-  u.onend=done;u.onerror=done;
-  spTimer=setTimeout(stuck,2500);
-  try{speechSynthesis.resume();}catch(e){}
-  const go=()=>{try{speechSynthesis.speak(u);}catch(e){done();}};
-  if(speechSynthesis.speaking||speechSynthesis.pending){speechSynthesis.cancel();setTimeout(go,80);}else go();
-}
+    // ====== モード切替（メインSE / サブ8） ======
+    function setMode(mode) {
+      appMode = mode;
+      document.getElementById('btn-mode-main').classList.toggle('active', mode === 'main');
+      document.getElementById('btn-mode-sub').classList.toggle('active', mode === 'sub');
+      document.getElementById('roi-label').textContent = mode === 'main' ? '字幕OCR枠' : '左上ガイドOCR枠';
 
-function logMsg(o,t){
-  $("latest").innerText=t;
-  const log=$("chatLog"),d=document.createElement("div");d.className="msg";
-  const a=document.createElement("div");a.className="orig";a.textContent="🗣️ "+o;
-  const b=document.createElement("div");b.className="trans";b.textContent="💬 "+t;
-  d.appendChild(a);d.appendChild(b);log.appendChild(d);
-  while(log.children.length>100)log.removeChild(log.firstChild);
-  log.scrollTop=log.scrollHeight;
-}
-</script>
+      // サブ機モードに切り替えた際、枠が下部デフォルトなら左上用に自動プリセット
+      if (mode === 'sub' && roi.y > 40) {
+        roi = { zoom: roi.zoom, x: 4, y: 6, w: 55, h: 25 };
+        syncSlidersFromRoi();
+      } else if (mode === 'main' && roi.y < 30) {
+        roi = { zoom: roi.zoom, x: 10, y: 65, w: 80, h: 22 };
+        syncSlidersFromRoi();
+      }
+    }
+
+    function syncSlidersFromRoi() {
+      document.getElementById('rng-x').value = roi.x;
+      document.getElementById('rng-y').value = roi.y;
+      document.getElementById('rng-w').value = roi.w;
+      document.getElementById('rng-h').value = roi.h;
+      updateRoiBox();
+    }
+
+    // ====== カメラ起動・ズーム・ROI枠制御 ======
+    async function initCamera() {
+      if (videoStream) return;
+      videoStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false
+      });
+      const video = document.getElementById('video');
+      video.srcObject = videoStream;
+      await video.play();
+      videoTrack = videoStream.getVideoTracks()[0];
+      updateCameraParams();
+    }
+
+    function updateCameraParams() {
+      roi.zoom = parseFloat(document.getElementById('rng-zoom').value);
+      document.getElementById('val-zoom').textContent = roi.zoom.toFixed(1) + 'x';
+      saveRoiSettings();
+
+      const video = document.getElementById('video');
+      // ハードウェア光学ズーム対応チェック（iPhone Safari対応）
+      if (videoTrack && typeof videoTrack.getCapabilities === 'function') {
+        const caps = videoTrack.getCapabilities();
+        if (caps.zoom) {
+          const clampedZoom = Math.min(Math.max(roi.zoom, caps.zoom.min), caps.zoom.max);
+          videoTrack.applyConstraints({ advanced: [{ zoom: clampedZoom }] }).catch(() => {});
+          video.style.transform = 'scale(1)';
+          return;
+        }
+      }
+      // ハードウェアズーム非対応時はCSS拡大でフォールバック
+      video.style.transform = `scale(${roi.zoom})`;
+    }
+
+    function updateRoiBox() {
+      roi.x = parseInt(document.getElementById('rng-x').value, 10);
+      roi.y = parseInt(document.getElementById('rng-y').value, 10);
+      roi.w = parseInt(document.getElementById('rng-w').value, 10);
+      roi.h = parseInt(document.getElementById('rng-h').value, 10);
+
+      document.getElementById('val-x').textContent = roi.x + '%';
+      document.getElementById('val-y').textContent = roi.y + '%';
+      document.getElementById('val-w').textContent = roi.w + '%';
+      document.getElementById('val-h').textContent = roi.h + '%';
+
+      const box = document.getElementById('roi-box');
+      box.style.left = roi.x + '%';
+      box.style.top = roi.y + '%';
+      box.style.width = roi.w + '%';
+      box.style.height = roi.h + '%';
+      saveRoiSettings();
+    }
+
+    function saveRoiSettings() {
+      localStorage.setItem(ROI_KEY, JSON.stringify(roi));
+    }
+
+    // ====== OCRスキャン開始・停止 ======
+    async function toggleScan() {
+      const btn = document.getElementById('btn-toggle-scan');
+      if (isScanning) {
+        isScanning = false;
+        btn.textContent = '▶ 開始';
+        btn.className = 'btn primary';
+        return;
+      }
+
+      btn.textContent = '準備中...';
+      try {
+        await initCamera();
+        if (!ocrWorker) {
+          ocrWorker = await Tesseract.createWorker('eng');
+        }
+        isScanning = true;
+        btn.textContent = '■ 停止';
+        btn.className = 'btn stop';
+        scanLoop();
+      } catch (err) {
+        alert('カメラ起動エラー: ' + err.message);
+        btn.textContent = '▶ 開始';
+      }
+    }
+
+    async function scanLoop() {
+      while (isScanning) {
+        if (!isProcessing) {
+          isProcessing = true;
+          try {
+            await processFrame();
+          } catch (e) {
+            console.error(e);
+          }
+          isProcessing = false;
+        }
+        await new Promise(r => setTimeout(r, 450)); // 約0.45秒間隔でスキャン
+      }
+    }
+
+    async function processFrame() {
+      const video = document.getElementById('video');
+      if (video.readyState < 2) return;
+
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      if (!vw || !vh) return;
+
+      // ROI領域を切り抜いて二値化（高コントラスト化でOCR精度向上）
+      const canvas = document.getElementById('crop-canvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+      // CSSズームフォールバック時の補正
+      const cssScale = (video.style.transform && video.style.transform !== 'scale(1)') ? roi.zoom : 1;
+      const effW = vw / cssScale;
+      const effH = vh / cssScale;
+      const offX = (vw - effW) / 2;
+      const offY = (vh - effH) / 2;
+
+      const sx = offX + effW * (roi.x / 100);
+      const sy = offY + effH * (roi.y / 100);
+      const sw = effW * (roi.w / 100);
+      const sh = effH * (roi.h / 100);
+
+      canvas.width = Math.max(10, Math.floor(sw));
+      canvas.height = Math.max(10, Math.floor(sh));
+      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+      // 白文字字幕を際立たせる簡易グレースケール＆コントラスト強調
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const d = imgData.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+        const v = lum > 165 ? 255 : 0; // 明るい字幕文字を白、背景を黒に
+        d[i] = d[i + 1] = d[i + 2] = v;
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      const { data: { text } } = await ocrWorker.recognize(canvas);
+      const cleaned = cleanOcrText(text);
+      if (!cleaned || cleaned.length < 3) return;
+
+      // 直前と同じセリフならスキップ
+      if (similarity(cleaned, lastOcrEn) > 0.85) return;
+      lastOcrEn = cleaned;
+
+      if (appMode === 'sub') {
+        // サブ機（iPhone 8）：読み取った英語ガイドを翻訳してメイン機へ送信
+        const translated = await translateText(cleaned, true);
+        renderGuide(translated.ja, cleaned);
+        if (conn && conn.open) {
+          conn.send({ type: 'guide', en: cleaned, ja: translated.ja });
+        }
+      } else {
+        // メイン機（iPhone SE）：辞書照合 → 未知ならGemini翻訳
+        const result = await translateText(cleaned, false);
+        renderSubtitle(result);
+      }
+    }
+
+    function cleanOcrText(raw) {
+      return raw
+        .replace(/\n+/g, ' ')
+        .replace(/[|_~`\\]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    // ====== 辞書照合 ＆ Gemini APIフォールバック ======
+    async function translateText(enText, isGuideMode) {
+      // 話者プレフィックス（例: "Lucia: ..."）を分離
+      let speakerPrefix = '';
+      let bodyEn = enText;
+      const colonIdx = enText.indexOf(':');
+      if (colonIdx > 0 && colonIdx < 22) {
+        speakerPrefix = enText.slice(0, colonIdx).trim();
+        bodyEn = enText.slice(colonIdx + 1).trim();
+      }
+
+      // 1. 公式辞書（gta6_dict.json）からあいまい検索（API消費ゼロ）
+      if (!isGuideMode && dictList.length > 0) {
+        let bestMatch = null;
+        let bestScore = 0;
+        for (const item of dictList) {
+          const score = similarity(bodyEn, item.en);
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = item;
+          }
+        }
+        if (bestMatch && bestScore >= 0.72) {
+          return {
+            ja: bestMatch.ja,
+            en: bestMatch.en,
+            speaker: bestMatch.speaker || speakerPrefix || 'DICT',
+            color: bestMatch.color || '#ffffff',
+            source: '公式辞書'
+          };
+        }
+      }
+
+      // 2. ブラウザローカルキャッシュ確認
+      const cacheKey = (isGuideMode ? 'G:' : 'S:') + bodyEn.toLowerCase();
+      if (transCache[cacheKey]) {
+        return { ...transCache[cacheKey], source: 'キャッシュ' };
+      }
+
+      // 3. 無料版 Gemini API (gemini-3.1-flash-lite) へフォールバック
+      const apiKey = localStorage.getItem('g_key');
+      if (!apiKey) {
+        return {
+          ja: bodyEn,
+          en: enText,
+          speaker: speakerPrefix || 'API未設定',
+          color: '#ffffff',
+          source: '未翻訳'
+        };
+      }
+
+      try {
+        const prompt = isGuideMode
+          ? `あなたはGTA6の公式日本語ローカライズ担当です。以下の英語の画面操作ガイド・ミッション目標を、日本のPS5版GTAらしい簡潔な命令調・UI表記の日本語に翻訳してください。翻訳文のみ出力してください。\n英語: ${bodyEn}`
+          : `あなたはGTA6の公式日本語ローカライズ担当です。以下の英語字幕を自然な日本語字幕に翻訳し、話者の性別も判定してJSONのみで返してください。\n形式: {"ja":"日本語訳","gender":"m または f または u"}\n話者名ヒント: ${speakerPrefix || '不明'}\n英語: ${bodyEn}`;
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.2, maxOutputTokens: 150 }
+          })
+        });
+
+        const data = await res.json();
+        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+
+        let finalObj;
+        if (isGuideMode) {
+          finalObj = { ja: reply || bodyEn, en: enText, speaker: 'GUIDE', color: '#ffd60a' };
+        } else {
+          const jsonMatch = reply.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            const colorMap = { m: '#64d2ff', f: '#ff7ab8', u: '#ffffff' };
+            finalObj = {
+              ja: parsed.ja || reply,
+              en: enText,
+              speaker: speakerPrefix || 'AI翻訳',
+              color: colorMap[parsed.gender] || '#ffffff'
+            };
+          } else {
+            finalObj = { ja: reply || bodyEn, en: enText, speaker: speakerPrefix || 'AI翻訳', color: '#ffffff' };
+          }
+        }
+
+        // キャッシュ保存
+        transCache[cacheKey] = finalObj;
+        localStorage.setItem(CACHE_KEY, JSON.stringify(transCache));
+        updateCacheCount();
+        return { ...finalObj, source: 'Gemini API' };
+      } catch (e) {
+        return { ja: bodyEn, en: enText, speaker: '通信エラー', color: '#ffffff', source: 'ERR' };
+      }
+    }
+
+    // レーベンシュタイン距離ベースの類似度 (0.0 ~ 1.0)
+    function similarity(s1, s2) {
+      const a = s1.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+      const b = s2.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+      if (!a || !b) return 0;
+      if (a === b) return 1;
+      const m = a.length, n = b.length;
+      const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          dp[i][j] = a[i - 1] === b[j - 1]
+            ? dp[i - 1][j - 1]
+            : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+        }
+      }
+      return 1 - dp[m][n] / Math.max(m, n);
+    }
+
+    // ====== 画面描画 ======
+    function renderSubtitle(res) {
+      const tag = document.getElementById('speaker-tag');
+      const ja = document.getElementById('sub-ja');
+      const en = document.getElementById('sub-en');
+      tag.textContent = `${res.speaker} [${res.source}]`;
+      tag.style.color = res.color;
+      ja.textContent = res.ja;
+      ja.style.color = res.color;
+      en.textContent = res.en;
+    }
+
+    function renderGuide(jaText, enText) {
+      document.getElementById('guide-ja').textContent = jaText;
+      if (appMode === 'sub') {
+        document.getElementById('sub-ja').textContent = jaText;
+        document.getElementById('sub-ja').style.color = '#ffd60a';
+        document.getElementById('sub-en').textContent = enText;
+      }
+    }
+
+    // ====== PeerJS 4桁合言葉ペアリング ======
+    function connectPeer() {
+      const code = document.getElementById('pair-code').value.trim();
+      if (!/^\d{4}$/.test(code)) {
+        alert('4桁の数字を入力してください');
+        return;
+      }
+      const badge = document.getElementById('badge-peer');
+      badge.textContent = '連携: 接続中...';
+      badge.className = 'badge warn';
+
+      if (peer) peer.destroy();
+
+      const mainId = `gta6-cam-main-${code}`;
+      const subId = `gta6-cam-sub-${code}`;
+
+      if (appMode === 'main') {
+        // メイン機はホストとして待機
+        peer = new Peer(mainId);
+        peer.on('open', () => {
+          badge.textContent = `待機中(${code})`;
+        });
+        peer.on('connection', (connection) => {
+          conn = connection;
+          badge.textContent = `連携OK(${code})`;
+          badge.className = 'badge ok';
+          conn.on('data', (data) => {
+            if (data && data.type === 'guide') {
+              renderGuide(data.ja, data.en);
+            }
+          });
+        });
+        peer.on('error', (err) => {
+          badge.textContent = '連携エラー';
+          console.error(err);
+        });
+      } else {
+        // サブ機はメイン機へ接続
+        peer = new Peer(subId);
+        peer.on('open', () => {
+          conn = peer.connect(mainId);
+          conn.on('open', () => {
+            badge.textContent = `送信OK(${code})`;
+            badge.className = 'badge ok';
+          });
+          conn.on('error', () => {
+            badge.textContent = '送信エラー';
+          });
+        });
+        peer.on('error', (err) => {
+          badge.textContent = '連携エラー';
+          console.error(err);
+        });
+      }
+    }
+
+    // ====== 設定モーダル操作 ======
+    function openSettings() {
+      document.getElementById('settings-drawer').classList.add('open');
+    }
+    function closeSettings() {
+      document.getElementById('settings-drawer').classList.remove('open');
+    }
+    function saveApiKey() {
+      const val = document.getElementById('api-key-input').value.trim();
+      localStorage.setItem('g_key', val);
+      alert('APIキー (g_key) を保存しました');
+    }
+    function clearTransCache() {
+      transCache = {};
+      localStorage.removeItem(CACHE_KEY);
+      updateCacheCount();
+      alert('翻訳キャッシュを削除しました');
+    }
+    function updateCacheCount() {
+      document.getElementById('cache-count').textContent = `${Object.keys(transCache).length} 件`;
+    }
+  </script>
 </body>
 </html>
